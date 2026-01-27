@@ -69,11 +69,10 @@ class PdfUpload extends Model
         return $this->hasMany(PdfPage::class);
     }
 
-    public function marriages(): HasMany
+    public function marriages()
     {
         return $this->hasMany(Marriage::class, 'pdf_id');
     }
-
 
     // Helper method to get file size in readable format
     public function getFormattedFileSizeAttribute(): string
