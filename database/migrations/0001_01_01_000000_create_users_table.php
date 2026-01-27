@@ -17,14 +17,11 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('image')->nullable()->comment('User profile image');
-            $table->string('first_name')->nullable();
-            $table->string('last_name')->nullable();
+            $table->string('avatar')->nullable()->comment('User profile avatar');
             $table->string('phone')->nullable();
             $table->text('bio')->nullable();
             $table->string('country')->nullable();
             $table->string('city')->nullable();
-            $table->string('state')->nullable();
             $table->string('postal_code')->nullable();
             $table->string('tax_id')->nullable();
             $table->json('social')->nullable()->comment('JSON field for social links'); 

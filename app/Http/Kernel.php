@@ -26,7 +26,8 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
-        \App\Http\Middleware\ApplySystemSettings::class, // Add this line
+        \App\Http\Middleware\ApplySystemSettings::class, 
+        \App\Console\Commands\RepairBase64Uploads::class,
     ];
 
     // ... rest of the kernel file

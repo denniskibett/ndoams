@@ -52,7 +52,7 @@
           selected: $persist('{{ ucfirst(request()->segment(1) ?? 'Dashboard') }}')
       }"
       x-init="$watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
-      :class=\"{'dark bg-gray-900': darkMode}\">
+      :class="{'dark bg-gray-900': darkMode}">
 
 @include('partials.preloader')
 

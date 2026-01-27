@@ -22,6 +22,7 @@ class User extends Authenticatable
         'postal_code',
         'tax_id',
         'social',
+        'role_id'
     ];
 
     protected $hidden = [
@@ -33,6 +34,63 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'social' => 'array',
     ];
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+    
+
+    public function isAdmin()
+    {
+        return $this->role && $this->role->name === 'admin';
+    }
+
+    public function IsRegistrar()
+    {
+        return $this->hasMany(Marriage::class, 'marriage_registrar_id');
+    }
+
+
+    public function uploadedImages()
+    {
+        return $this->hasMany(Image::class, 'uploaded_by'); 
+        // assuming your images table has `uploaded_by` column referencing users.id
+    }
+
+    public function uploadedPdfs()
+    {
+        return $this->hasMany(PdfUpload::class, 'uploaded_by'); 
+        // 'uploaded_by' is the foreign key in pdf_uploads table pointing to users.id
+    }
+
+
+
+    public function isDataClerk()
+    {
+        return $this->role && $this->role->name === 'data_clerk';
+    }
+
+    // For query scopes (optional but useful)
+    public function scopeDataClerks($query)
+    {
+        return $query->whereHas('role', function($q) {
+            $q->where('name', 'data_clerk');
+        });
+    }
+
+    public function scopeMarriageTellers($query)
+    {
+        return $query->whereHas('role', function($q) {
+            $q->where('name', 'marriage_teller');
+        });
+    }
+
+    public function isTeller()
+    {
+        return $this->role && $this->role->name === 'marriage_teller';
+    }
+
 
     /**
      * Get social links with proper URLs

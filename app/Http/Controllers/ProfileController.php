@@ -89,7 +89,7 @@ class ProfileController extends Controller
                     }
                     
                     // Store new avatar
-                    $path = $request->file('avatar')->store('avatars', 'public');
+                    $path = $request->file('avatar')->store('avatar', 'public');
                     $validated['avatar'] = $path;
                 }
                 

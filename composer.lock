@@ -4,8 +4,85 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d4e47f8842fbf39101c41bc3289923f5",
+    "content-hash": "b23188c07224ea7ea67038adc4e900da",
     "packages": [
+        {
+            "name": "barryvdh/laravel-dompdf",
+            "version": "v3.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/barryvdh/laravel-dompdf.git",
+                "reference": "8e71b99fc53bb8eb77f316c3c452dd74ab7cb25d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/barryvdh/laravel-dompdf/zipball/8e71b99fc53bb8eb77f316c3c452dd74ab7cb25d",
+                "reference": "8e71b99fc53bb8eb77f316c3c452dd74ab7cb25d",
+                "shasum": ""
+            },
+            "require": {
+                "dompdf/dompdf": "^3.0",
+                "illuminate/support": "^9|^10|^11|^12",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "larastan/larastan": "^2.7|^3.0",
+                "orchestra/testbench": "^7|^8|^9|^10",
+                "phpro/grumphp": "^2.5",
+                "squizlabs/php_codesniffer": "^3.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "PDF": "Barryvdh\\DomPDF\\Facade\\Pdf",
+                        "Pdf": "Barryvdh\\DomPDF\\Facade\\Pdf"
+                    },
+                    "providers": [
+                        "Barryvdh\\DomPDF\\ServiceProvider"
+                    ]
+                },
+                "branch-alias": {
+                    "dev-master": "3.0-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Barryvdh\\DomPDF\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Barry vd. Heuvel",
+                    "email": "barryvdh@gmail.com"
+                }
+            ],
+            "description": "A DOMPDF Wrapper for Laravel",
+            "keywords": [
+                "dompdf",
+                "laravel",
+                "pdf"
+            ],
+            "support": {
+                "issues": "https://github.com/barryvdh/laravel-dompdf/issues",
+                "source": "https://github.com/barryvdh/laravel-dompdf/tree/v3.1.1"
+            },
+            "funding": [
+                {
+                    "url": "https://fruitcake.nl",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/barryvdh",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-02-13T15:07:54+00:00"
+        },
         {
             "name": "brick/math",
             "version": "0.13.1",
@@ -134,6 +211,83 @@
                 }
             ],
             "time": "2024-02-09T16:56:22+00:00"
+        },
+        {
+            "name": "composer/semver",
+            "version": "3.4.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/composer/semver.git",
+                "reference": "198166618906cb2de69b95d7d47e5fa8aa1b2b95"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/composer/semver/zipball/198166618906cb2de69b95d7d47e5fa8aa1b2b95",
+                "reference": "198166618906cb2de69b95d7d47e5fa8aa1b2b95",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.3.2 || ^7.0 || ^8.0"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^1.11",
+                "symfony/phpunit-bridge": "^3 || ^7"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "3.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Composer\\Semver\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nils Adermann",
+                    "email": "naderman@naderman.de",
+                    "homepage": "http://www.naderman.de"
+                },
+                {
+                    "name": "Jordi Boggiano",
+                    "email": "j.boggiano@seld.be",
+                    "homepage": "http://seld.be"
+                },
+                {
+                    "name": "Rob Bast",
+                    "email": "rob.bast@gmail.com",
+                    "homepage": "http://robbast.nl"
+                }
+            ],
+            "description": "Semver library that offers utilities, version constraint parsing and validation.",
+            "keywords": [
+                "semantic",
+                "semver",
+                "validation",
+                "versioning"
+            ],
+            "support": {
+                "irc": "ircs://irc.libera.chat:6697/composer",
+                "issues": "https://github.com/composer/semver/issues",
+                "source": "https://github.com/composer/semver/tree/3.4.4"
+            },
+            "funding": [
+                {
+                    "url": "https://packagist.com",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/composer",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-08-20T19:15:30+00:00"
         },
         {
             "name": "dflydev/dot-access-data",
@@ -379,6 +533,161 @@
             "time": "2024-02-05T11:56:58+00:00"
         },
         {
+            "name": "dompdf/dompdf",
+            "version": "v3.1.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/dompdf/dompdf.git",
+                "reference": "db712c90c5b9868df3600e64e68da62e78a34623"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/dompdf/dompdf/zipball/db712c90c5b9868df3600e64e68da62e78a34623",
+                "reference": "db712c90c5b9868df3600e64e68da62e78a34623",
+                "shasum": ""
+            },
+            "require": {
+                "dompdf/php-font-lib": "^1.0.0",
+                "dompdf/php-svg-lib": "^1.0.0",
+                "ext-dom": "*",
+                "ext-mbstring": "*",
+                "masterminds/html5": "^2.0",
+                "php": "^7.1 || ^8.0"
+            },
+            "require-dev": {
+                "ext-gd": "*",
+                "ext-json": "*",
+                "ext-zip": "*",
+                "mockery/mockery": "^1.3",
+                "phpunit/phpunit": "^7.5 || ^8 || ^9 || ^10 || ^11",
+                "squizlabs/php_codesniffer": "^3.5",
+                "symfony/process": "^4.4 || ^5.4 || ^6.2 || ^7.0"
+            },
+            "suggest": {
+                "ext-gd": "Needed to process images",
+                "ext-gmagick": "Improves image processing performance",
+                "ext-imagick": "Improves image processing performance",
+                "ext-zlib": "Needed for pdf stream compression"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Dompdf\\": "src/"
+                },
+                "classmap": [
+                    "lib/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-2.1"
+            ],
+            "authors": [
+                {
+                    "name": "The Dompdf Community",
+                    "homepage": "https://github.com/dompdf/dompdf/blob/master/AUTHORS.md"
+                }
+            ],
+            "description": "DOMPDF is a CSS 2.1 compliant HTML to PDF converter",
+            "homepage": "https://github.com/dompdf/dompdf",
+            "support": {
+                "issues": "https://github.com/dompdf/dompdf/issues",
+                "source": "https://github.com/dompdf/dompdf/tree/v3.1.4"
+            },
+            "time": "2025-10-29T12:43:30+00:00"
+        },
+        {
+            "name": "dompdf/php-font-lib",
+            "version": "1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/dompdf/php-font-lib.git",
+                "reference": "6137b7d4232b7f16c882c75e4ca3991dbcf6fe2d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/dompdf/php-font-lib/zipball/6137b7d4232b7f16c882c75e4ca3991dbcf6fe2d",
+                "reference": "6137b7d4232b7f16c882c75e4ca3991dbcf6fe2d",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "php": "^7.1 || ^8.0"
+            },
+            "require-dev": {
+                "symfony/phpunit-bridge": "^3 || ^4 || ^5 || ^6"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "FontLib\\": "src/FontLib"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-2.1-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "The FontLib Community",
+                    "homepage": "https://github.com/dompdf/php-font-lib/blob/master/AUTHORS.md"
+                }
+            ],
+            "description": "A library to read, parse, export and make subsets of different types of font files.",
+            "homepage": "https://github.com/dompdf/php-font-lib",
+            "support": {
+                "issues": "https://github.com/dompdf/php-font-lib/issues",
+                "source": "https://github.com/dompdf/php-font-lib/tree/1.0.1"
+            },
+            "time": "2024-12-02T14:37:59+00:00"
+        },
+        {
+            "name": "dompdf/php-svg-lib",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/dompdf/php-svg-lib.git",
+                "reference": "eb045e518185298eb6ff8d80d0d0c6b17aecd9af"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/dompdf/php-svg-lib/zipball/eb045e518185298eb6ff8d80d0d0c6b17aecd9af",
+                "reference": "eb045e518185298eb6ff8d80d0d0c6b17aecd9af",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "php": "^7.1 || ^8.0",
+                "sabberworm/php-css-parser": "^8.4"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^7.5 || ^8.5 || ^9.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Svg\\": "src/Svg"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "The SvgLib Community",
+                    "homepage": "https://github.com/dompdf/php-svg-lib/blob/master/AUTHORS.md"
+                }
+            ],
+            "description": "A library to read, parse and export to PDF SVG files.",
+            "homepage": "https://github.com/dompdf/php-svg-lib",
+            "support": {
+                "issues": "https://github.com/dompdf/php-svg-lib/issues",
+                "source": "https://github.com/dompdf/php-svg-lib/tree/1.0.0"
+            },
+            "time": "2024-04-29T13:26:35+00:00"
+        },
+        {
             "name": "dragonmantank/cron-expression",
             "version": "v3.4.0",
             "source": {
@@ -511,6 +820,69 @@
             "time": "2025-03-06T22:45:56+00:00"
         },
         {
+            "name": "firebase/php-jwt",
+            "version": "v6.11.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/firebase/php-jwt.git",
+                "reference": "d1e91ecf8c598d073d0995afa8cd5c75c6e19e66"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/firebase/php-jwt/zipball/d1e91ecf8c598d073d0995afa8cd5c75c6e19e66",
+                "reference": "d1e91ecf8c598d073d0995afa8cd5c75c6e19e66",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "guzzlehttp/guzzle": "^7.4",
+                "phpspec/prophecy-phpunit": "^2.0",
+                "phpunit/phpunit": "^9.5",
+                "psr/cache": "^2.0||^3.0",
+                "psr/http-client": "^1.0",
+                "psr/http-factory": "^1.0"
+            },
+            "suggest": {
+                "ext-sodium": "Support EdDSA (Ed25519) signatures",
+                "paragonie/sodium_compat": "Support EdDSA (Ed25519) signatures when libsodium is not present"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Firebase\\JWT\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Neuman Vong",
+                    "email": "neuman+pear@twilio.com",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Anant Narayanan",
+                    "email": "anant@php.net",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A simple library to encode and decode JSON Web Tokens (JWT) in PHP. Should conform to the current spec.",
+            "homepage": "https://github.com/firebase/php-jwt",
+            "keywords": [
+                "jwt",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/firebase/php-jwt/issues",
+                "source": "https://github.com/firebase/php-jwt/tree/v6.11.1"
+            },
+            "time": "2025-04-09T20:32:01+00:00"
+        },
+        {
             "name": "fruitcake/php-cors",
             "version": "v1.3.0",
             "source": {
@@ -582,6 +954,441 @@
             "time": "2023-10-12T05:21:21+00:00"
         },
         {
+            "name": "google/auth",
+            "version": "v1.49.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/googleapis/google-auth-library-php.git",
+                "reference": "68e3d88cb59a49f713e3db25d4f6bb3cc0b70764"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/googleapis/google-auth-library-php/zipball/68e3d88cb59a49f713e3db25d4f6bb3cc0b70764",
+                "reference": "68e3d88cb59a49f713e3db25d4f6bb3cc0b70764",
+                "shasum": ""
+            },
+            "require": {
+                "firebase/php-jwt": "^6.0",
+                "guzzlehttp/guzzle": "^7.4.5",
+                "guzzlehttp/psr7": "^2.4.5",
+                "php": "^8.1",
+                "psr/cache": "^2.0||^3.0",
+                "psr/http-message": "^1.1||^2.0",
+                "psr/log": "^3.0"
+            },
+            "require-dev": {
+                "guzzlehttp/promises": "^2.0",
+                "kelvinmo/simplejwt": "0.7.1",
+                "phpseclib/phpseclib": "^3.0.35",
+                "phpspec/prophecy-phpunit": "^2.1",
+                "phpunit/phpunit": "^9.6",
+                "sebastian/comparator": ">=1.2.3",
+                "squizlabs/php_codesniffer": "^4.0",
+                "symfony/filesystem": "^6.3||^7.3",
+                "symfony/process": "^6.0||^7.0",
+                "webmozart/assert": "^1.11"
+            },
+            "suggest": {
+                "phpseclib/phpseclib": "May be used in place of OpenSSL for signing strings or for token management. Please require version ^2."
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Google\\Auth\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "Google Auth Library for PHP",
+            "homepage": "https://github.com/google/google-auth-library-php",
+            "keywords": [
+                "Authentication",
+                "google",
+                "oauth2"
+            ],
+            "support": {
+                "docs": "https://cloud.google.com/php/docs/reference/auth/latest",
+                "issues": "https://github.com/googleapis/google-auth-library-php/issues",
+                "source": "https://github.com/googleapis/google-auth-library-php/tree/v1.49.0"
+            },
+            "time": "2025-11-06T21:27:55+00:00"
+        },
+        {
+            "name": "google/cloud-core",
+            "version": "v1.68.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/googleapis/google-cloud-php-core.git",
+                "reference": "f33d7c3e912d83ea731d08975e79de1c3b8c19d1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/googleapis/google-cloud-php-core/zipball/f33d7c3e912d83ea731d08975e79de1c3b8c19d1",
+                "reference": "f33d7c3e912d83ea731d08975e79de1c3b8c19d1",
+                "shasum": ""
+            },
+            "require": {
+                "google/auth": "^1.34",
+                "google/gax": "^1.38.0",
+                "guzzlehttp/guzzle": "^6.5.8||^7.4.4",
+                "guzzlehttp/promises": "^1.4||^2.0",
+                "guzzlehttp/psr7": "^2.6",
+                "monolog/monolog": "^2.9||^3.0",
+                "php": "^8.1",
+                "psr/http-message": "^1.0||^2.0",
+                "rize/uri-template": "~0.3||~0.4"
+            },
+            "require-dev": {
+                "erusev/parsedown": "^1.6",
+                "google/cloud-common-protos": "~0.5",
+                "opis/closure": "^3.7|^4.0",
+                "phpdocumentor/reflection": "^5.3.3||^6.0",
+                "phpdocumentor/reflection-docblock": "^5.3",
+                "phpspec/prophecy-phpunit": "^2.0",
+                "phpunit/phpunit": "^9.0",
+                "squizlabs/php_codesniffer": "2.*"
+            },
+            "suggest": {
+                "opis/closure": "May be used to serialize closures to process jobs in the batch daemon. Please require version ^3.",
+                "symfony/lock": "Required for the Spanner cached based session pool. Please require the following commit: 3.3.x-dev#1ba6ac9"
+            },
+            "bin": [
+                "bin/google-cloud-batch"
+            ],
+            "type": "library",
+            "extra": {
+                "component": {
+                    "id": "cloud-core",
+                    "path": "Core",
+                    "entry": "src/ServiceBuilder.php",
+                    "target": "googleapis/google-cloud-php-core.git"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Google\\Cloud\\Core\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "Google Cloud PHP shared dependency, providing functionality useful to all components.",
+            "support": {
+                "source": "https://github.com/googleapis/google-cloud-php-core/tree/v1.68.2"
+            },
+            "time": "2025-10-25T01:16:28+00:00"
+        },
+        {
+            "name": "google/cloud-vision",
+            "version": "v2.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/googleapis/google-cloud-php-vision.git",
+                "reference": "da05f701b12c1865282ecd66d5853016286f9c9e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/googleapis/google-cloud-php-vision/zipball/da05f701b12c1865282ecd66d5853016286f9c9e",
+                "reference": "da05f701b12c1865282ecd66d5853016286f9c9e",
+                "shasum": ""
+            },
+            "require": {
+                "google/cloud-core": "^1.57",
+                "google/gax": "^1.38.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "erusev/parsedown": "^1.6",
+                "google/cloud-storage": "^1.12",
+                "phpdocumentor/reflection": "^5.3.3||^6.0",
+                "phpdocumentor/reflection-docblock": "^5.3",
+                "phpspec/prophecy-phpunit": "^2.0",
+                "phpunit/phpunit": "^9.0",
+                "squizlabs/php_codesniffer": "2.*"
+            },
+            "suggest": {
+                "ext-grpc": "The gRPC extension enables use of the performant gRPC transport",
+                "ext-protobuf": "Provides a significant increase in throughput over the pure PHP protobuf implementation. See https://cloud.google.com/php/grpc for installation instructions.",
+                "google/cloud-storage": "Annotate images stored in Google Cloud Storage"
+            },
+            "type": "library",
+            "extra": {
+                "component": {
+                    "id": "cloud-vision",
+                    "path": "Vision",
+                    "entry": "src/VisionClient.php",
+                    "target": "googleapis/google-cloud-php-vision.git"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Google\\Cloud\\Vision\\": "src",
+                    "GPBMetadata\\Google\\Cloud\\Vision\\": "metadata"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "Cloud Vision Client for PHP",
+            "support": {
+                "source": "https://github.com/googleapis/google-cloud-php-vision/tree/v2.1.1"
+            },
+            "time": "2025-10-07T18:41:09+00:00"
+        },
+        {
+            "name": "google/common-protos",
+            "version": "4.12.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/googleapis/common-protos-php.git",
+                "reference": "0127156899af0df2681bd42024c60bd5360d64e3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/googleapis/common-protos-php/zipball/0127156899af0df2681bd42024c60bd5360d64e3",
+                "reference": "0127156899af0df2681bd42024c60bd5360d64e3",
+                "shasum": ""
+            },
+            "require": {
+                "google/protobuf": "^4.31",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.6"
+            },
+            "type": "library",
+            "extra": {
+                "component": {
+                    "id": "common-protos",
+                    "path": "CommonProtos",
+                    "entry": "README.md",
+                    "target": "googleapis/common-protos-php.git"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Google\\Api\\": "src/Api",
+                    "Google\\Iam\\": "src/Iam",
+                    "Google\\Rpc\\": "src/Rpc",
+                    "Google\\Type\\": "src/Type",
+                    "Google\\Cloud\\": "src/Cloud",
+                    "GPBMetadata\\Google\\Api\\": "metadata/Api",
+                    "GPBMetadata\\Google\\Iam\\": "metadata/Iam",
+                    "GPBMetadata\\Google\\Rpc\\": "metadata/Rpc",
+                    "GPBMetadata\\Google\\Type\\": "metadata/Type",
+                    "GPBMetadata\\Google\\Cloud\\": "metadata/Cloud",
+                    "GPBMetadata\\Google\\Logging\\": "metadata/Logging"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "Google API Common Protos for PHP",
+            "homepage": "https://github.com/googleapis/common-protos-php",
+            "keywords": [
+                "google"
+            ],
+            "support": {
+                "source": "https://github.com/googleapis/common-protos-php/tree/v4.12.4"
+            },
+            "time": "2025-09-20T01:29:44+00:00"
+        },
+        {
+            "name": "google/gax",
+            "version": "v1.38.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/googleapis/gax-php.git",
+                "reference": "9848673203b9af459ce0481f73fa22debf7cc4db"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/googleapis/gax-php/zipball/9848673203b9af459ce0481f73fa22debf7cc4db",
+                "reference": "9848673203b9af459ce0481f73fa22debf7cc4db",
+                "shasum": ""
+            },
+            "require": {
+                "google/auth": "^1.49",
+                "google/common-protos": "^4.4",
+                "google/grpc-gcp": "^0.4",
+                "google/longrunning": "~0.4",
+                "google/protobuf": "^4.31",
+                "grpc/grpc": "^1.13",
+                "guzzlehttp/promises": "^2.0",
+                "guzzlehttp/psr7": "^2.0",
+                "php": "^8.1",
+                "ramsey/uuid": "^4.0"
+            },
+            "conflict": {
+                "ext-protobuf": "<4.31.0"
+            },
+            "require-dev": {
+                "phpspec/prophecy-phpunit": "^2.1",
+                "phpstan/phpstan": "^2.0",
+                "phpunit/phpunit": "^9.6",
+                "squizlabs/php_codesniffer": "4.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Google\\ApiCore\\": "src",
+                    "GPBMetadata\\ApiCore\\": "metadata/ApiCore"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": "Google API Core for PHP",
+            "homepage": "https://github.com/googleapis/gax-php",
+            "keywords": [
+                "google"
+            ],
+            "support": {
+                "issues": "https://github.com/googleapis/gax-php/issues",
+                "source": "https://github.com/googleapis/gax-php/tree/v1.38.2"
+            },
+            "time": "2025-11-19T17:28:29+00:00"
+        },
+        {
+            "name": "google/grpc-gcp",
+            "version": "v0.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/GoogleCloudPlatform/grpc-gcp-php.git",
+                "reference": "e585b7721bbe806ef45b5c52ae43dfc2bff89968"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/GoogleCloudPlatform/grpc-gcp-php/zipball/e585b7721bbe806ef45b5c52ae43dfc2bff89968",
+                "reference": "e585b7721bbe806ef45b5c52ae43dfc2bff89968",
+                "shasum": ""
+            },
+            "require": {
+                "google/auth": "^1.3",
+                "google/protobuf": "^v3.25.3||^4.26.1",
+                "grpc/grpc": "^v1.13.0",
+                "php": "^8.0",
+                "psr/cache": "^1.0.1||^2.0.0||^3.0.0"
+            },
+            "require-dev": {
+                "google/cloud-spanner": "^1.7",
+                "phpunit/phpunit": "^9.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Grpc\\Gcp\\": "src/"
+                },
+                "classmap": [
+                    "src/generated/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "gRPC GCP library for channel management",
+            "support": {
+                "issues": "https://github.com/GoogleCloudPlatform/grpc-gcp-php/issues",
+                "source": "https://github.com/GoogleCloudPlatform/grpc-gcp-php/tree/v0.4.1"
+            },
+            "time": "2025-02-19T21:53:22+00:00"
+        },
+        {
+            "name": "google/longrunning",
+            "version": "0.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/googleapis/php-longrunning.git",
+                "reference": "226d3b5166eaa13754cc5e452b37872478e23375"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/googleapis/php-longrunning/zipball/226d3b5166eaa13754cc5e452b37872478e23375",
+                "reference": "226d3b5166eaa13754cc5e452b37872478e23375",
+                "shasum": ""
+            },
+            "require-dev": {
+                "google/gax": "^1.38.0",
+                "phpunit/phpunit": "^9.0"
+            },
+            "type": "library",
+            "extra": {
+                "component": {
+                    "id": "longrunning",
+                    "path": "LongRunning",
+                    "entry": null,
+                    "target": "googleapis/php-longrunning"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Google\\LongRunning\\": "src/LongRunning",
+                    "Google\\ApiCore\\LongRunning\\": "src/ApiCore/LongRunning",
+                    "GPBMetadata\\Google\\Longrunning\\": "metadata/Longrunning"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "Google LongRunning Client for PHP",
+            "support": {
+                "source": "https://github.com/googleapis/php-longrunning/tree/v0.6.0"
+            },
+            "time": "2025-10-07T18:41:09+00:00"
+        },
+        {
+            "name": "google/protobuf",
+            "version": "v4.33.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/protocolbuffers/protobuf-php.git",
+                "reference": "0cd73ccf0cd26c3e72299cce1ea6144091a57e12"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/protocolbuffers/protobuf-php/zipball/0cd73ccf0cd26c3e72299cce1ea6144091a57e12",
+                "reference": "0cd73ccf0cd26c3e72299cce1ea6144091a57e12",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": ">=5.0.0 <8.5.27"
+            },
+            "suggest": {
+                "ext-bcmath": "Need to support JSON deserialization"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Google\\Protobuf\\": "src/Google/Protobuf",
+                    "GPBMetadata\\Google\\Protobuf\\": "src/GPBMetadata/Google/Protobuf"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": "proto library for PHP",
+            "homepage": "https://developers.google.com/protocol-buffers/",
+            "keywords": [
+                "proto"
+            ],
+            "support": {
+                "source": "https://github.com/protocolbuffers/protobuf-php/tree/v4.33.1"
+            },
+            "time": "2025-11-12T21:58:05+00:00"
+        },
+        {
             "name": "graham-campbell/result-type",
             "version": "v1.1.3",
             "source": {
@@ -642,6 +1449,50 @@
                 }
             ],
             "time": "2024-07-20T21:45:45+00:00"
+        },
+        {
+            "name": "grpc/grpc",
+            "version": "1.74.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/grpc/grpc-php.git",
+                "reference": "32bf4dba256d60d395582fb6e4e8d3936bcdb713"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/grpc/grpc-php/zipball/32bf4dba256d60d395582fb6e4e8d3936bcdb713",
+                "reference": "32bf4dba256d60d395582fb6e4e8d3936bcdb713",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.0.0"
+            },
+            "require-dev": {
+                "google/auth": "^v1.3.0"
+            },
+            "suggest": {
+                "ext-protobuf": "For better performance, install the protobuf C extension.",
+                "google/protobuf": "To get started using grpc quickly, install the native protobuf library."
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Grpc\\": "src/lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "gRPC library for PHP",
+            "homepage": "https://grpc.io",
+            "keywords": [
+                "rpc"
+            ],
+            "support": {
+                "source": "https://github.com/grpc/grpc-php/tree/v1.74.0"
+            },
+            "time": "2025-07-24T20:02:16+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -1055,6 +1906,90 @@
             "time": "2025-02-03T10:55:03+00:00"
         },
         {
+            "name": "intervention/image",
+            "version": "2.7.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Intervention/image.git",
+                "reference": "04be355f8d6734c826045d02a1079ad658322dad"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Intervention/image/zipball/04be355f8d6734c826045d02a1079ad658322dad",
+                "reference": "04be355f8d6734c826045d02a1079ad658322dad",
+                "shasum": ""
+            },
+            "require": {
+                "ext-fileinfo": "*",
+                "guzzlehttp/psr7": "~1.1 || ^2.0",
+                "php": ">=5.4.0"
+            },
+            "require-dev": {
+                "mockery/mockery": "~0.9.2",
+                "phpunit/phpunit": "^4.8 || ^5.7 || ^7.5.15"
+            },
+            "suggest": {
+                "ext-gd": "to use GD library based image processing.",
+                "ext-imagick": "to use Imagick based image processing.",
+                "intervention/imagecache": "Caching extension for the Intervention Image library"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Image": "Intervention\\Image\\Facades\\Image"
+                    },
+                    "providers": [
+                        "Intervention\\Image\\ImageServiceProvider"
+                    ]
+                },
+                "branch-alias": {
+                    "dev-master": "2.4-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Intervention\\Image\\": "src/Intervention/Image"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Oliver Vogel",
+                    "email": "oliver@intervention.io",
+                    "homepage": "https://intervention.io/"
+                }
+            ],
+            "description": "Image handling and manipulation library with support for Laravel integration",
+            "homepage": "http://image.intervention.io/",
+            "keywords": [
+                "gd",
+                "image",
+                "imagick",
+                "laravel",
+                "thumbnail",
+                "watermark"
+            ],
+            "support": {
+                "issues": "https://github.com/Intervention/image/issues",
+                "source": "https://github.com/Intervention/image/tree/2.7.2"
+            },
+            "funding": [
+                {
+                    "url": "https://paypal.me/interventionio",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/Intervention",
+                    "type": "github"
+                }
+            ],
+            "time": "2022-05-21T17:30:32+00:00"
+        },
+        {
             "name": "laravel/framework",
             "version": "v12.19.3",
             "source": {
@@ -1327,6 +2262,69 @@
                 "source": "https://github.com/laravel/prompts/tree/v0.3.5"
             },
             "time": "2025-02-11T13:34:40+00:00"
+        },
+        {
+            "name": "laravel/sanctum",
+            "version": "v4.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/sanctum.git",
+                "reference": "f5fb373be39a246c74a060f2cf2ae2c2145b3664"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/sanctum/zipball/f5fb373be39a246c74a060f2cf2ae2c2145b3664",
+                "reference": "f5fb373be39a246c74a060f2cf2ae2c2145b3664",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "illuminate/console": "^11.0|^12.0",
+                "illuminate/contracts": "^11.0|^12.0",
+                "illuminate/database": "^11.0|^12.0",
+                "illuminate/support": "^11.0|^12.0",
+                "php": "^8.2",
+                "symfony/console": "^7.0"
+            },
+            "require-dev": {
+                "mockery/mockery": "^1.6",
+                "orchestra/testbench": "^9.15|^10.8",
+                "phpstan/phpstan": "^1.10"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Laravel\\Sanctum\\SanctumServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Laravel\\Sanctum\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Taylor Otwell",
+                    "email": "taylor@laravel.com"
+                }
+            ],
+            "description": "Laravel Sanctum provides a featherweight authentication system for SPAs and simple APIs.",
+            "keywords": [
+                "auth",
+                "laravel",
+                "sanctum"
+            ],
+            "support": {
+                "issues": "https://github.com/laravel/sanctum/issues",
+                "source": "https://github.com/laravel/sanctum"
+            },
+            "time": "2025-11-21T13:59:03+00:00"
         },
         {
             "name": "laravel/serializable-closure",
@@ -2007,6 +3005,151 @@
             "time": "2024-12-08T08:18:47+00:00"
         },
         {
+            "name": "maennchen/zipstream-php",
+            "version": "3.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/maennchen/ZipStream-PHP.git",
+                "reference": "9712d8fa4cdf9240380b01eb4be55ad8dcf71416"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/maennchen/ZipStream-PHP/zipball/9712d8fa4cdf9240380b01eb4be55ad8dcf71416",
+                "reference": "9712d8fa4cdf9240380b01eb4be55ad8dcf71416",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "ext-zlib": "*",
+                "php-64bit": "^8.3"
+            },
+            "require-dev": {
+                "brianium/paratest": "^7.7",
+                "ext-zip": "*",
+                "friendsofphp/php-cs-fixer": "^3.16",
+                "guzzlehttp/guzzle": "^7.5",
+                "mikey179/vfsstream": "^1.6",
+                "php-coveralls/php-coveralls": "^2.5",
+                "phpunit/phpunit": "^12.0",
+                "vimeo/psalm": "^6.0"
+            },
+            "suggest": {
+                "guzzlehttp/psr7": "^2.4",
+                "psr/http-message": "^2.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ZipStream\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Paul Duncan",
+                    "email": "pabs@pablotron.org"
+                },
+                {
+                    "name": "Jonatan Männchen",
+                    "email": "jonatan@maennchen.ch"
+                },
+                {
+                    "name": "Jesse Donat",
+                    "email": "donatj@gmail.com"
+                },
+                {
+                    "name": "András Kolesár",
+                    "email": "kolesar@kolesar.hu"
+                }
+            ],
+            "description": "ZipStream is a library for dynamically streaming dynamic zip files from PHP without writing to the disk at all on the server.",
+            "keywords": [
+                "stream",
+                "zip"
+            ],
+            "support": {
+                "issues": "https://github.com/maennchen/ZipStream-PHP/issues",
+                "source": "https://github.com/maennchen/ZipStream-PHP/tree/3.2.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/maennchen",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-07-17T11:15:13+00:00"
+        },
+        {
+            "name": "masterminds/html5",
+            "version": "2.10.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Masterminds/html5-php.git",
+                "reference": "fcf91eb64359852f00d921887b219479b4f21251"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Masterminds/html5-php/zipball/fcf91eb64359852f00d921887b219479b4f21251",
+                "reference": "fcf91eb64359852f00d921887b219479b4f21251",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "php": ">=5.3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^4.8.35 || ^5.7.21 || ^6 || ^7 || ^8 || ^9"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.7-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Masterminds\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Matt Butcher",
+                    "email": "technosophos@gmail.com"
+                },
+                {
+                    "name": "Matt Farina",
+                    "email": "matt@mattfarina.com"
+                },
+                {
+                    "name": "Asmir Mustafic",
+                    "email": "goetas@gmail.com"
+                }
+            ],
+            "description": "An HTML5 parser and serializer.",
+            "homepage": "http://masterminds.github.io/html5-php",
+            "keywords": [
+                "HTML5",
+                "dom",
+                "html",
+                "parser",
+                "querypath",
+                "serializer",
+                "xml"
+            ],
+            "support": {
+                "issues": "https://github.com/Masterminds/html5-php/issues",
+                "source": "https://github.com/Masterminds/html5-php/tree/2.10.0"
+            },
+            "time": "2025-07-25T09:04:22+00:00"
+        },
+        {
             "name": "monolog/monolog",
             "version": "3.9.0",
             "source": {
@@ -2583,6 +3726,121 @@
             "time": "2024-07-20T21:41:07+00:00"
         },
         {
+            "name": "pion/laravel-chunk-upload",
+            "version": "v1.5.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/pionl/laravel-chunk-upload.git",
+                "reference": "5cfdb8d9058bb4ecdf3a3100b6c7bb197c21e4d4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/pionl/laravel-chunk-upload/zipball/5cfdb8d9058bb4ecdf3a3100b6c7bb197c21e4d4",
+                "reference": "5cfdb8d9058bb4ecdf3a3100b6c7bb197c21e4d4",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/console": "5.2 - 5.8 | ^6.0 | ^7.0 | ^8.0 | ^9.0 | ^10.0 | ^11.0 | ^12.0",
+                "illuminate/filesystem": "5.2 - 5.8 | ^6.0 | ^7.0 | ^8.0 | ^9.0 | ^10.0 | ^11.0 | ^12.0",
+                "illuminate/http": "5.2 - 5.8 | ^6.0 | ^7.0 | ^8.0 | ^9.0 | ^10.0 | ^11.0 | ^12.0",
+                "illuminate/support": "5.2 - 5.8 | ^6.0 | ^7.0 | ^8.0 | ^9.0 | ^10.0 | ^11.0 | ^12.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.16.0 | ^3.52.0",
+                "mockery/mockery": "^1.1.0 | ^1.3.0 | ^1.6.0",
+                "overtrue/phplint": "^1.1 | ^2.0 | ^9.1",
+                "phpunit/phpunit": "5.7 | 6.0 | 7.0 | 7.5 | 8.4 | ^8.5 | ^9.3 | ^10.0 | ^11.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Pion\\Laravel\\ChunkUpload\\Providers\\ChunkUploadServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Pion\\Laravel\\ChunkUpload\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Martin Kluska",
+                    "email": "martin@kluska.cz"
+                }
+            ],
+            "description": "Service for chunked upload with several js providers",
+            "support": {
+                "issues": "https://github.com/pionl/laravel-chunk-upload/issues",
+                "source": "https://github.com/pionl/laravel-chunk-upload/tree/v1.5.6"
+            },
+            "funding": [
+                {
+                    "url": "https://revolut.me/martinpv7n",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/pionl",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-03-19T16:30:08+00:00"
+        },
+        {
+            "name": "psr/cache",
+            "version": "3.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/cache.git",
+                "reference": "aa5030cfa5405eccfdcb1083ce040c2cb8d253bf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/cache/zipball/aa5030cfa5405eccfdcb1083ce040c2cb8d253bf",
+                "reference": "aa5030cfa5405eccfdcb1083ce040c2cb8d253bf",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Cache\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for caching libraries",
+            "keywords": [
+                "cache",
+                "psr",
+                "psr-6"
+            ],
+            "support": {
+                "source": "https://github.com/php-fig/cache/tree/3.0.0"
+            },
+            "time": "2021-02-03T23:26:27+00:00"
+        },
+        {
             "name": "psr/clock",
             "version": "1.0.0",
             "source": {
@@ -3074,6 +4332,81 @@
             "time": "2025-03-16T03:05:19+00:00"
         },
         {
+            "name": "rahulhaque/laravel-filepond",
+            "version": "v12.3.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rahulhaque/laravel-filepond.git",
+                "reference": "df0eb5b763444a098fea48b1a6e511d87b99d3f8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rahulhaque/laravel-filepond/zipball/df0eb5b763444a098fea48b1a6e511d87b99d3f8",
+                "reference": "df0eb5b763444a098fea48b1a6e511d87b99d3f8",
+                "shasum": ""
+            },
+            "require": {
+                "laravel/framework": "^12.0",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "fakerphp/faker": "^1.24.1",
+                "laravel/pail": "^1.2.3",
+                "laravel/pint": "^1.24",
+                "laravel/sail": "^1.45",
+                "league/flysystem-aws-s3-v3": "^3.29",
+                "mockery/mockery": "^1.6.12",
+                "nunomaduro/collision": "^8.8.2",
+                "orchestra/testbench": "^10.6",
+                "phpunit/phpunit": "^11.5.38"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Filepond": "RahulHaque\\Filepond\\Facades\\Filepond"
+                    },
+                    "providers": [
+                        "RahulHaque\\Filepond\\FilepondServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "RahulHaque\\Filepond\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Rahul Haque",
+                    "email": "rahulhaque07@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Use FilePond the Laravel way",
+            "homepage": "https://github.com/rahulhaque/laravel-filepond",
+            "keywords": [
+                "filepond",
+                "filepond-laravel",
+                "laravel-filepond"
+            ],
+            "support": {
+                "issues": "https://github.com/rahulhaque/laravel-filepond/issues",
+                "source": "https://github.com/rahulhaque/laravel-filepond/tree/v12.3.4"
+            },
+            "funding": [
+                {
+                    "url": "https://ko-fi.com/rahulhaque",
+                    "type": "ko_fi"
+                }
+            ],
+            "time": "2025-10-09T13:05:57+00:00"
+        },
+        {
             "name": "ralouphie/getallheaders",
             "version": "3.0.3",
             "source": {
@@ -3273,30 +4606,826 @@
             "time": "2025-06-01T06:28:46+00:00"
         },
         {
-            "name": "spatie/db-dumper",
-            "version": "3.8.1",
+            "name": "rize/uri-template",
+            "version": "0.4.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/spatie/db-dumper.git",
-                "reference": "e974cc7862b8de1bd3b7ea7d4839ba7167acb546"
+                "url": "https://github.com/rize/UriTemplate.git",
+                "reference": "56f374a9a42c7c3998f8b55b6b21b224de90c58b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/db-dumper/zipball/e974cc7862b8de1bd3b7ea7d4839ba7167acb546",
-                "reference": "e974cc7862b8de1bd3b7ea7d4839ba7167acb546",
+                "url": "https://api.github.com/repos/rize/UriTemplate/zipball/56f374a9a42c7c3998f8b55b6b21b224de90c58b",
+                "reference": "56f374a9a42c7c3998f8b55b6b21b224de90c58b",
                 "shasum": ""
             },
             "require": {
-                "php": "^8.0",
-                "symfony/process": "^5.0|^6.0|^7.0|^8.0"
+                "php": ">=8.1"
             },
             "require-dev": {
-                "pestphp/pest": "^1.22"
+                "friendsofphp/php-cs-fixer": "^3.63",
+                "phpstan/phpstan": "^1.12",
+                "phpunit/phpunit": "~10.0"
             },
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Spatie\\DbDumper\\": "src"
+                    "Rize\\": "src/Rize"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Marut K",
+                    "homepage": "http://twitter.com/rezigned"
+                }
+            ],
+            "description": "PHP URI Template (RFC 6570) supports both expansion & extraction",
+            "keywords": [
+                "RFC 6570",
+                "template",
+                "uri"
+            ],
+            "support": {
+                "issues": "https://github.com/rize/UriTemplate/issues",
+                "source": "https://github.com/rize/UriTemplate/tree/0.4.0"
+            },
+            "funding": [
+                {
+                    "url": "https://www.paypal.me/rezigned",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/rezigned",
+                    "type": "github"
+                },
+                {
+                    "url": "https://opencollective.com/rize-uri-template",
+                    "type": "open_collective"
+                }
+            ],
+            "time": "2024-11-27T12:13:42+00:00"
+        },
+        {
+            "name": "rosell-dk/exec-with-fallback",
+            "version": "1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rosell-dk/exec-with-fallback.git",
+                "reference": "f88a6b29abd0b580566056b7c1eb0434eb5db20d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rosell-dk/exec-with-fallback/zipball/f88a6b29abd0b580566056b7c1eb0434eb5db20d",
+                "reference": "f88a6b29abd0b580566056b7c1eb0434eb5db20d",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.6 | ^7.0 | ^8.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.11",
+                "phpunit/phpunit": "^9.3",
+                "squizlabs/php_codesniffer": "3.*"
+            },
+            "suggest": {
+                "php-stan/php-stan": "Suggested for dev, in order to analyse code before committing"
+            },
+            "type": "library",
+            "extra": {
+                "scripts-descriptions": {
+                    "ci": "Run tests before CI",
+                    "test": "Launches the preconfigured PHPUnit",
+                    "phpcs": "Checks coding styles (PSR2) of file/dir, which you must supply. To check all, supply 'src'",
+                    "cs-fix": "Fix the coding style of a PHP file or directory, which you must specify.",
+                    "phpcbf": "Fix coding styles (PSR2) of file/dir, which you must supply. To fix all, supply 'src'",
+                    "cs-fix-all": "Fix the coding style of all the source files, to comply with the PSR-2 coding standard"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "ExecWithFallback\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bjørn Rosell",
+                    "homepage": "https://www.bitwise-it.dk/contact",
+                    "role": "Project Author"
+                }
+            ],
+            "description": "An exec() with fallback to emulations (proc_open, etc)",
+            "keywords": [
+                "command",
+                "exec",
+                "fallback",
+                "open_proc",
+                "resiliant",
+                "sturdy"
+            ],
+            "support": {
+                "issues": "https://github.com/rosell-dk/exec-with-fallback/issues",
+                "source": "https://github.com/rosell-dk/exec-with-fallback/tree/1.2.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/rosell-dk",
+                    "type": "github"
+                },
+                {
+                    "url": "https://ko-fi.com/rosell",
+                    "type": "ko_fi"
+                }
+            ],
+            "time": "2021-12-08T12:09:43+00:00"
+        },
+        {
+            "name": "rosell-dk/file-util",
+            "version": "0.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rosell-dk/file-util.git",
+                "reference": "2ff895308c37f448b34b031cfbfd8e45f43936fd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rosell-dk/file-util/zipball/2ff895308c37f448b34b031cfbfd8e45f43936fd",
+                "reference": "2ff895308c37f448b34b031cfbfd8e45f43936fd",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4",
+                "rosell-dk/exec-with-fallback": "^1.0.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.11",
+                "mikey179/vfsstream": "^1.6",
+                "phpstan/phpstan": "^1.5",
+                "phpunit/phpunit": "^9.3",
+                "squizlabs/php_codesniffer": "3.*"
+            },
+            "type": "library",
+            "extra": {
+                "scripts-descriptions": {
+                    "ci": "Run tests before CI",
+                    "test": "Launches the preconfigured PHPUnit",
+                    "phpcs": "Checks coding styles (PSR2) of file/dir, which you must supply. To check all, supply 'src'",
+                    "cs-fix": "Fix the coding style of a PHP file or directory, which you must specify.",
+                    "phpcbf": "Fix coding styles (PSR2) of file/dir, which you must supply. To fix all, supply 'src'",
+                    "cs-fix-all": "Fix the coding style of all the source files, to comply with the PSR-2 coding standard"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "FileUtil\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bjørn Rosell",
+                    "homepage": "https://www.bitwise-it.dk/contact",
+                    "role": "Project Author"
+                }
+            ],
+            "description": "Functions for dealing with files and paths",
+            "keywords": [
+                "files",
+                "path",
+                "util"
+            ],
+            "support": {
+                "issues": "https://github.com/rosell-dk/file-util/issues",
+                "source": "https://github.com/rosell-dk/file-util/tree/0.1.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/rosell-dk",
+                    "type": "github"
+                },
+                {
+                    "url": "https://ko-fi.com/rosell",
+                    "type": "ko_fi"
+                }
+            ],
+            "time": "2022-04-19T10:12:31+00:00"
+        },
+        {
+            "name": "rosell-dk/image-mime-type-guesser",
+            "version": "1.1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rosell-dk/image-mime-type-guesser.git",
+                "reference": "9cac5a19e799a0ef1f7cffbce36ec33485080b39"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rosell-dk/image-mime-type-guesser/zipball/9cac5a19e799a0ef1f7cffbce36ec33485080b39",
+                "reference": "9cac5a19e799a0ef1f7cffbce36ec33485080b39",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.6 | ^7.0 | ^8.0",
+                "rosell-dk/image-mime-type-sniffer": "^1.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.11",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^9.3",
+                "squizlabs/php_codesniffer": "3.*"
+            },
+            "type": "library",
+            "extra": {
+                "scripts-descriptions": {
+                    "ci": "Run tests before CI",
+                    "test": "Launches the preconfigured PHPUnit",
+                    "phpcs": "Checks coding styles (PSR2) of file/dir, which you must supply. To check all, supply 'src'",
+                    "cs-fix": "Fix the coding style of a PHP file or directory, which you must specify.",
+                    "phpcbf": "Fix coding styles (PSR2) of file/dir, which you must supply. To fix all, supply 'src'",
+                    "cs-fix-all": "Fix the coding style of all the source files, to comply with the PSR-2 coding standard"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "ImageMimeTypeGuesser\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bjørn Rosell",
+                    "homepage": "https://www.bitwise-it.dk/contact",
+                    "role": "Project Author"
+                }
+            ],
+            "description": "Guess mime type of images",
+            "keywords": [
+                "image",
+                "images",
+                "mime",
+                "mime type"
+            ],
+            "support": {
+                "issues": "https://github.com/rosell-dk/image-mime-type-guesser/issues",
+                "source": "https://github.com/rosell-dk/image-mime-type-guesser/tree/1.1.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/rosell-dk",
+                    "type": "github"
+                },
+                {
+                    "url": "https://ko-fi.com/rosell",
+                    "type": "ko_fi"
+                }
+            ],
+            "time": "2024-04-06T13:55:15+00:00"
+        },
+        {
+            "name": "rosell-dk/image-mime-type-sniffer",
+            "version": "1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rosell-dk/image-mime-type-sniffer.git",
+                "reference": "9ed14cc5d2c14c417660a4dd1946b5f056494691"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rosell-dk/image-mime-type-sniffer/zipball/9ed14cc5d2c14c417660a4dd1946b5f056494691",
+                "reference": "9ed14cc5d2c14c417660a4dd1946b5f056494691",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.11",
+                "mikey179/vfsstream": "^1.6",
+                "phpstan/phpstan": "^1.5",
+                "phpunit/phpunit": "^9.3",
+                "squizlabs/php_codesniffer": "3.*"
+            },
+            "type": "library",
+            "extra": {
+                "scripts-descriptions": {
+                    "ci": "Run tests before CI",
+                    "test": "Launches the preconfigured PHPUnit",
+                    "phpcs": "Checks coding styles (PSR2) of file/dir, which you must supply. To check all, supply 'src'",
+                    "cs-fix": "Fix the coding style of a PHP file or directory, which you must specify.",
+                    "phpcbf": "Fix coding styles (PSR2) of file/dir, which you must supply. To fix all, supply 'src'",
+                    "cs-fix-all": "Fix the coding style of all the source files, to comply with the PSR-2 coding standard"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "ImageMimeTypeSniffer\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bjørn Rosell",
+                    "homepage": "https://www.bitwise-it.dk/contact",
+                    "role": "Project Author"
+                }
+            ],
+            "description": "Sniff mime type (images only)",
+            "keywords": [
+                "image",
+                "images",
+                "mime",
+                "mime type"
+            ],
+            "support": {
+                "issues": "https://github.com/rosell-dk/image-mime-type-sniffer/issues",
+                "source": "https://github.com/rosell-dk/image-mime-type-sniffer/tree/1.1.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/rosell-dk",
+                    "type": "github"
+                },
+                {
+                    "url": "https://ko-fi.com/rosell",
+                    "type": "ko_fi"
+                }
+            ],
+            "time": "2022-04-20T14:31:25+00:00"
+        },
+        {
+            "name": "rosell-dk/locate-binaries",
+            "version": "1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rosell-dk/locate-binaries.git",
+                "reference": "bd2f493383ecd55aa519828dd2898e30f3b9cbb0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rosell-dk/locate-binaries/zipball/bd2f493383ecd55aa519828dd2898e30f3b9cbb0",
+                "reference": "bd2f493383ecd55aa519828dd2898e30f3b9cbb0",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.6",
+                "rosell-dk/exec-with-fallback": "^1.0.0",
+                "rosell-dk/file-util": "^0.1.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.11",
+                "phpstan/phpstan": "^1.5",
+                "phpunit/phpunit": "^9.3",
+                "squizlabs/php_codesniffer": "3.*"
+            },
+            "type": "library",
+            "extra": {
+                "scripts-descriptions": {
+                    "ci": "Run tests before CI",
+                    "test": "Launches the preconfigured PHPUnit",
+                    "phpcs": "Checks coding styles (PSR2) of file/dir, which you must supply. To check all, supply 'src'",
+                    "cs-fix": "Fix the coding style of a PHP file or directory, which you must specify.",
+                    "phpcbf": "Fix coding styles (PSR2) of file/dir, which you must supply. To fix all, supply 'src'",
+                    "cs-fix-all": "Fix the coding style of all the source files, to comply with the PSR-2 coding standard"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "LocateBinaries\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bjørn Rosell",
+                    "homepage": "https://www.bitwise-it.dk/contact",
+                    "role": "Project Author"
+                }
+            ],
+            "description": "Locate a binaries by means of exec() or similar",
+            "keywords": [
+                "binary",
+                "discover",
+                "locate",
+                "whereis",
+                "which"
+            ],
+            "support": {
+                "issues": "https://github.com/rosell-dk/locate-binaries/issues",
+                "source": "https://github.com/rosell-dk/locate-binaries/tree/1.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/rosell-dk",
+                    "type": "github"
+                },
+                {
+                    "url": "https://ko-fi.com/rosell",
+                    "type": "ko_fi"
+                }
+            ],
+            "time": "2022-04-20T07:20:07+00:00"
+        },
+        {
+            "name": "rosell-dk/webp-convert",
+            "version": "2.9.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rosell-dk/webp-convert.git",
+                "reference": "ea8c20730bd4e7952e99d50e9ae6487c4026354f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rosell-dk/webp-convert/zipball/ea8c20730bd4e7952e99d50e9ae6487c4026354f",
+                "reference": "ea8c20730bd4e7952e99d50e9ae6487c4026354f",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.6 | ^7.0 | ^8.0",
+                "rosell-dk/exec-with-fallback": "^1.2.0",
+                "rosell-dk/image-mime-type-guesser": "^1.1.1",
+                "rosell-dk/locate-binaries": "^1.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.11",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^9.3",
+                "squizlabs/php_codesniffer": "3.*"
+            },
+            "suggest": {
+                "ext-gd": "to use GD extension for converting. Note: Gd must be compiled with webp support",
+                "ext-imagick": "to use Imagick extension for converting. Note: Gd must be compiled with webp support",
+                "ext-vips": "to use Vips extension for converting."
+            },
+            "type": "library",
+            "extra": {
+                "scripts-descriptions": {
+                    "ci": "Run tests before CI",
+                    "test": "Launches the preconfigured PHPUnit",
+                    "phpcs": "Checks coding styles (PSR2) of file/dir, which you must supply. To check all, supply 'src'",
+                    "cs-fix": "Fix the coding style of a PHP file or directory, which you must specify.",
+                    "phpcbf": "Fix coding styles (PSR2) of file/dir, which you must supply. To fix all, supply 'src'",
+                    "cs-fix-all": "Fix the coding style of all the source files, to comply with the PSR-2 coding standard"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "WebPConvert\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bjørn Rosell",
+                    "homepage": "https://www.bitwise-it.dk/contact",
+                    "role": "Project Author"
+                },
+                {
+                    "name": "Martin Folkers",
+                    "homepage": "https://twobrain.io",
+                    "role": "Collaborator"
+                }
+            ],
+            "description": "Convert JPEG & PNG to WebP with PHP",
+            "keywords": [
+                "Webp",
+                "cwebp",
+                "gd",
+                "image conversion",
+                "images",
+                "imagick",
+                "jpg",
+                "jpg2webp",
+                "png",
+                "png2webp"
+            ],
+            "support": {
+                "issues": "https://github.com/rosell-dk/webp-convert/issues",
+                "source": "https://github.com/rosell-dk/webp-convert/tree/2.9.3"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/rosell-dk",
+                    "type": "github"
+                },
+                {
+                    "url": "https://ko-fi.com/rosell",
+                    "type": "ko_fi"
+                }
+            ],
+            "time": "2024-04-06T13:34:24+00:00"
+        },
+        {
+            "name": "sabberworm/php-css-parser",
+            "version": "v8.9.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/MyIntervals/PHP-CSS-Parser.git",
+                "reference": "d8e916507b88e389e26d4ab03c904a082aa66bb9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/MyIntervals/PHP-CSS-Parser/zipball/d8e916507b88e389e26d4ab03c904a082aa66bb9",
+                "reference": "d8e916507b88e389e26d4ab03c904a082aa66bb9",
+                "shasum": ""
+            },
+            "require": {
+                "ext-iconv": "*",
+                "php": "^5.6.20 || ^7.0.0 || ~8.0.0 || ~8.1.0 || ~8.2.0 || ~8.3.0 || ~8.4.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "5.7.27 || 6.5.14 || 7.5.20 || 8.5.41",
+                "rawr/cross-data-providers": "^2.0.0"
+            },
+            "suggest": {
+                "ext-mbstring": "for parsing UTF-8 CSS"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "9.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Sabberworm\\CSS\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Raphael Schweikert"
+                },
+                {
+                    "name": "Oliver Klee",
+                    "email": "github@oliverklee.de"
+                },
+                {
+                    "name": "Jake Hotson",
+                    "email": "jake.github@qzdesign.co.uk"
+                }
+            ],
+            "description": "Parser for CSS Files written in PHP",
+            "homepage": "https://www.sabberworm.com/blog/2010/6/10/php-css-parser",
+            "keywords": [
+                "css",
+                "parser",
+                "stylesheet"
+            ],
+            "support": {
+                "issues": "https://github.com/MyIntervals/PHP-CSS-Parser/issues",
+                "source": "https://github.com/MyIntervals/PHP-CSS-Parser/tree/v8.9.0"
+            },
+            "time": "2025-07-11T13:20:48+00:00"
+        },
+        {
+            "name": "setasign/fpdf",
+            "version": "1.8.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Setasign/FPDF.git",
+                "reference": "0838e0ee4925716fcbbc50ad9e1799b5edfae0a0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Setasign/FPDF/zipball/0838e0ee4925716fcbbc50ad9e1799b5edfae0a0",
+                "reference": "0838e0ee4925716fcbbc50ad9e1799b5edfae0a0",
+                "shasum": ""
+            },
+            "require": {
+                "ext-gd": "*",
+                "ext-zlib": "*"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "fpdf.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Olivier Plathey",
+                    "email": "oliver@fpdf.org",
+                    "homepage": "http://fpdf.org/"
+                }
+            ],
+            "description": "FPDF is a PHP class which allows to generate PDF files with pure PHP. F from FPDF stands for Free: you may use it for any kind of usage and modify it to suit your needs.",
+            "homepage": "http://www.fpdf.org",
+            "keywords": [
+                "fpdf",
+                "pdf"
+            ],
+            "support": {
+                "source": "https://github.com/Setasign/FPDF/tree/1.8.6"
+            },
+            "time": "2023-06-26T14:44:25+00:00"
+        },
+        {
+            "name": "setasign/fpdi",
+            "version": "v2.6.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Setasign/FPDI.git",
+                "reference": "4b53852fde2734ec6a07e458a085db627c60eada"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Setasign/FPDI/zipball/4b53852fde2734ec6a07e458a085db627c60eada",
+                "reference": "4b53852fde2734ec6a07e458a085db627c60eada",
+                "shasum": ""
+            },
+            "require": {
+                "ext-zlib": "*",
+                "php": "^7.1 || ^8.0"
+            },
+            "conflict": {
+                "setasign/tfpdf": "<1.31"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^7",
+                "setasign/fpdf": "~1.8.6",
+                "setasign/tfpdf": "~1.33",
+                "squizlabs/php_codesniffer": "^3.5",
+                "tecnickcom/tcpdf": "^6.8"
+            },
+            "suggest": {
+                "setasign/fpdf": "FPDI will extend this class but as it is also possible to use TCPDF or tFPDF as an alternative. There's no fixed dependency configured."
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "setasign\\Fpdi\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jan Slabon",
+                    "email": "jan.slabon@setasign.com",
+                    "homepage": "https://www.setasign.com"
+                },
+                {
+                    "name": "Maximilian Kresse",
+                    "email": "maximilian.kresse@setasign.com",
+                    "homepage": "https://www.setasign.com"
+                }
+            ],
+            "description": "FPDI is a collection of PHP classes facilitating developers to read pages from existing PDF documents and use them as templates in FPDF. Because it is also possible to use FPDI with TCPDF, there are no fixed dependencies defined. Please see suggestions for packages which evaluates the dependencies automatically.",
+            "homepage": "https://www.setasign.com/fpdi",
+            "keywords": [
+                "fpdf",
+                "fpdi",
+                "pdf"
+            ],
+            "support": {
+                "issues": "https://github.com/Setasign/FPDI/issues",
+                "source": "https://github.com/Setasign/FPDI/tree/v2.6.4"
+            },
+            "funding": [
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/setasign/fpdi",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2025-08-05T09:57:14+00:00"
+        },
+        {
+            "name": "spatie/browsershot",
+            "version": "5.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/browsershot.git",
+                "reference": "127c20da43d0d711ebbc64f85053f50bc147c515"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/browsershot/zipball/127c20da43d0d711ebbc64f85053f50bc147c515",
+                "reference": "127c20da43d0d711ebbc64f85053f50bc147c515",
+                "shasum": ""
+            },
+            "require": {
+                "ext-fileinfo": "*",
+                "ext-json": "*",
+                "php": "^8.2",
+                "spatie/temporary-directory": "^2.0",
+                "symfony/process": "^6.0|^7.0|^8.0"
+            },
+            "require-dev": {
+                "pestphp/pest": "^3.0|^4.0",
+                "spatie/image": "^3.6",
+                "spatie/pdf-to-text": "^1.52",
+                "spatie/phpunit-snapshot-assertions": "^5.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Spatie\\Browsershot\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Freek Van der Herten",
+                    "email": "freek@spatie.be",
+                    "homepage": "https://github.com/freekmurze",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Convert a webpage to an image or pdf using headless Chrome",
+            "homepage": "https://github.com/spatie/browsershot",
+            "keywords": [
+                "chrome",
+                "convert",
+                "headless",
+                "image",
+                "pdf",
+                "puppeteer",
+                "screenshot",
+                "webpage"
+            ],
+            "support": {
+                "source": "https://github.com/spatie/browsershot/tree/5.1.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/spatie",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-11-26T09:49:20+00:00"
+        },
+        {
+            "name": "spatie/image",
+            "version": "3.8.7",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/image.git",
+                "reference": "4d35db207c4b317bc221d02ab7ba94aa78b44c24"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/image/zipball/4d35db207c4b317bc221d02ab7ba94aa78b44c24",
+                "reference": "4d35db207c4b317bc221d02ab7ba94aa78b44c24",
+                "shasum": ""
+            },
+            "require": {
+                "ext-exif": "*",
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "php": "^8.2",
+                "spatie/image-optimizer": "^1.7.5",
+                "spatie/temporary-directory": "^2.2",
+                "symfony/process": "^6.4|^7.0|^8.0"
+            },
+            "require-dev": {
+                "ext-gd": "*",
+                "ext-imagick": "*",
+                "laravel/sail": "^1.34",
+                "pestphp/pest": "^3.0|^4.0",
+                "phpstan/phpstan": "^1.10.50",
+                "spatie/pest-plugin-snapshots": "^2.1",
+                "spatie/pixelmatch-php": "^1.0",
+                "spatie/ray": "^1.40.1",
+                "symfony/var-dumper": "^6.4|^7.0|^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Spatie\\Image\\": "src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -3311,17 +5440,14 @@
                     "role": "Developer"
                 }
             ],
-            "description": "Dump databases",
-            "homepage": "https://github.com/spatie/db-dumper",
+            "description": "Manipulate images with an expressive API",
+            "homepage": "https://github.com/spatie/image",
             "keywords": [
-                "database",
-                "db-dumper",
-                "dump",
-                "mysqldump",
+                "image",
                 "spatie"
             ],
             "support": {
-                "source": "https://github.com/spatie/db-dumper/tree/3.8.1"
+                "source": "https://github.com/spatie/image/tree/3.8.7"
             },
             "funding": [
                 {
@@ -3333,70 +5459,37 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-11-26T09:51:23+00:00"
+            "time": "2025-11-24T15:10:50+00:00"
         },
         {
-            "name": "spatie/laravel-backup",
-            "version": "9.3.6",
+            "name": "spatie/image-optimizer",
+            "version": "1.8.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/spatie/laravel-backup.git",
-                "reference": "d378a07b580aa8bf440b50decdbab7b5d6f63c46"
+                "url": "https://github.com/spatie/image-optimizer.git",
+                "reference": "2ad9ac7c19501739183359ae64ea6c15869c23d9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-backup/zipball/d378a07b580aa8bf440b50decdbab7b5d6f63c46",
-                "reference": "d378a07b580aa8bf440b50decdbab7b5d6f63c46",
+                "url": "https://api.github.com/repos/spatie/image-optimizer/zipball/2ad9ac7c19501739183359ae64ea6c15869c23d9",
+                "reference": "2ad9ac7c19501739183359ae64ea6c15869c23d9",
                 "shasum": ""
             },
             "require": {
-                "ext-zip": "^1.14.0",
-                "illuminate/console": "^10.10.0|^11.0|^12.0",
-                "illuminate/contracts": "^10.10.0|^11.0|^12.0",
-                "illuminate/events": "^10.10.0|^11.0|^12.0",
-                "illuminate/filesystem": "^10.10.0|^11.0|^12.0",
-                "illuminate/notifications": "^10.10.0|^11.0|^12.0",
-                "illuminate/support": "^10.10.0|^11.0|^12.0",
-                "league/flysystem": "^3.0",
-                "php": "^8.2",
-                "spatie/db-dumper": "^3.8",
-                "spatie/laravel-package-tools": "^1.6.2",
-                "spatie/laravel-signal-aware-command": "^1.2|^2.0",
-                "spatie/temporary-directory": "^2.0",
-                "symfony/console": "^6.0|^7.0",
-                "symfony/finder": "^6.0|^7.0"
+                "ext-fileinfo": "*",
+                "php": "^7.3|^8.0",
+                "psr/log": "^1.0 | ^2.0 | ^3.0",
+                "symfony/process": "^4.2|^5.0|^6.0|^7.0|^8.0"
             },
             "require-dev": {
-                "composer-runtime-api": "^2.0",
-                "ext-pcntl": "*",
-                "larastan/larastan": "^2.7.0|^3.0",
-                "laravel/slack-notification-channel": "^2.5|^3.0",
-                "league/flysystem-aws-s3-v3": "^2.0|^3.0",
-                "mockery/mockery": "^1.4",
-                "orchestra/testbench": "^8.0|^9.0|^10.0",
-                "pestphp/pest": "^1.20|^2.0|^3.0|^4.0",
-                "phpstan/extension-installer": "^1.1",
-                "phpstan/phpstan-deprecation-rules": "^1.0",
-                "phpstan/phpstan-phpunit": "^1.1",
-                "rector/rector": "^1.1"
-            },
-            "suggest": {
-                "laravel/slack-notification-channel": "Required for sending notifications via Slack"
+                "pestphp/pest": "^1.21|^2.0|^3.0|^4.0",
+                "phpunit/phpunit": "^8.5.21|^9.4.4|^10.0|^11.0|^12.0",
+                "symfony/var-dumper": "^4.2|^5.0|^6.0|^7.0|^8.0"
             },
             "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "Spatie\\Backup\\BackupServiceProvider"
-                    ]
-                }
-            },
             "autoload": {
-                "files": [
-                    "src/Helpers/functions.php"
-                ],
                 "psr-4": {
-                    "Spatie\\Backup\\": "src"
+                    "Spatie\\ImageOptimizer\\": "src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -3411,29 +5504,127 @@
                     "role": "Developer"
                 }
             ],
-            "description": "A Laravel package to backup your application",
-            "homepage": "https://github.com/spatie/laravel-backup",
+            "description": "Easily optimize images using PHP",
+            "homepage": "https://github.com/spatie/image-optimizer",
             "keywords": [
-                "backup",
-                "database",
-                "laravel-backup",
+                "image-optimizer",
                 "spatie"
             ],
             "support": {
-                "issues": "https://github.com/spatie/laravel-backup/issues",
-                "source": "https://github.com/spatie/laravel-backup/tree/9.3.6"
+                "issues": "https://github.com/spatie/image-optimizer/issues",
+                "source": "https://github.com/spatie/image-optimizer/tree/1.8.1"
+            },
+            "time": "2025-11-26T10:57:19+00:00"
+        },
+        {
+            "name": "spatie/laravel-medialibrary",
+            "version": "11.17.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/laravel-medialibrary.git",
+                "reference": "eef29bbc701d786f2f6233ca4c40deb61282ac36"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/laravel-medialibrary/zipball/eef29bbc701d786f2f6233ca4c40deb61282ac36",
+                "reference": "eef29bbc701d786f2f6233ca4c40deb61282ac36",
+                "shasum": ""
+            },
+            "require": {
+                "composer/semver": "^3.4",
+                "ext-exif": "*",
+                "ext-fileinfo": "*",
+                "ext-json": "*",
+                "illuminate/bus": "^10.2|^11.0|^12.0",
+                "illuminate/conditionable": "^10.2|^11.0|^12.0",
+                "illuminate/console": "^10.2|^11.0|^12.0",
+                "illuminate/database": "^10.2|^11.0|^12.0",
+                "illuminate/pipeline": "^10.2|^11.0|^12.0",
+                "illuminate/support": "^10.2|^11.0|^12.0",
+                "maennchen/zipstream-php": "^3.1",
+                "php": "^8.2",
+                "spatie/image": "^3.3.2",
+                "spatie/laravel-package-tools": "^1.16.1",
+                "spatie/temporary-directory": "^2.2",
+                "symfony/console": "^6.4.1|^7.0|^8.0"
+            },
+            "conflict": {
+                "php-ffmpeg/php-ffmpeg": "<0.6.1"
+            },
+            "require-dev": {
+                "aws/aws-sdk-php": "^3.293.10",
+                "ext-imagick": "*",
+                "ext-pdo_sqlite": "*",
+                "ext-zip": "*",
+                "guzzlehttp/guzzle": "^7.8.1",
+                "larastan/larastan": "^2.7|^3.0",
+                "league/flysystem-aws-s3-v3": "^3.22",
+                "mockery/mockery": "^1.6.7",
+                "orchestra/testbench": "^7.0|^8.17|^9.0|^10.0",
+                "pestphp/pest": "^2.28|^3.5|^4.0",
+                "phpstan/extension-installer": "^1.3.1",
+                "spatie/laravel-ray": "^1.33",
+                "spatie/pdf-to-image": "^2.2|^3.0",
+                "spatie/pest-expectations": "^1.13",
+                "spatie/pest-plugin-snapshots": "^2.1"
+            },
+            "suggest": {
+                "league/flysystem-aws-s3-v3": "Required to use AWS S3 file storage",
+                "php-ffmpeg/php-ffmpeg": "Required for generating video thumbnails",
+                "spatie/pdf-to-image": "Required for generating thumbnails of PDFs and SVGs"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Spatie\\MediaLibrary\\MediaLibraryServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Spatie\\MediaLibrary\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Freek Van der Herten",
+                    "email": "freek@spatie.be",
+                    "homepage": "https://spatie.be",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Associate files with Eloquent models",
+            "homepage": "https://github.com/spatie/laravel-medialibrary",
+            "keywords": [
+                "cms",
+                "conversion",
+                "downloads",
+                "images",
+                "laravel",
+                "laravel-medialibrary",
+                "media",
+                "spatie"
+            ],
+            "support": {
+                "issues": "https://github.com/spatie/laravel-medialibrary/issues",
+                "source": "https://github.com/spatie/laravel-medialibrary/tree/11.17.5"
             },
             "funding": [
                 {
-                    "url": "https://github.com/sponsors/spatie",
-                    "type": "github"
+                    "url": "https://spatie.be/open-source/support-us",
+                    "type": "custom"
                 },
                 {
-                    "url": "https://spatie.be/open-source/support-us",
-                    "type": "other"
+                    "url": "https://github.com/spatie",
+                    "type": "github"
                 }
             ],
-            "time": "2025-11-05T11:25:01+00:00"
+            "time": "2025-11-13T11:36:18+00:00"
         },
         {
             "name": "spatie/laravel-package-tools",
@@ -3497,48 +5688,65 @@
             "time": "2025-07-17T15:46:43+00:00"
         },
         {
-            "name": "spatie/laravel-signal-aware-command",
-            "version": "2.1.1",
+            "name": "spatie/laravel-pdf",
+            "version": "1.8.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/spatie/laravel-signal-aware-command.git",
-                "reference": "70207ba2702a9ee8f523af0cd4711d1104c5ca53"
+                "url": "https://github.com/spatie/laravel-pdf.git",
+                "reference": "4f3eb0dc94d0cfdd7295fd71b7946dc0eba664af"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-signal-aware-command/zipball/70207ba2702a9ee8f523af0cd4711d1104c5ca53",
-                "reference": "70207ba2702a9ee8f523af0cd4711d1104c5ca53",
+                "url": "https://api.github.com/repos/spatie/laravel-pdf/zipball/4f3eb0dc94d0cfdd7295fd71b7946dc0eba664af",
+                "reference": "4f3eb0dc94d0cfdd7295fd71b7946dc0eba664af",
                 "shasum": ""
             },
             "require": {
-                "illuminate/contracts": "^11.0|^12.0",
+                "illuminate/contracts": "^10.0|^11.0|^12.0",
                 "php": "^8.2",
-                "spatie/laravel-package-tools": "^1.4.3",
-                "symfony/console": "^7.0|^8.0"
+                "spatie/browsershot": "^4.0|^5.0",
+                "spatie/laravel-package-tools": "^1.16.1",
+                "spatie/temporary-directory": "^2.2.1"
             },
             "require-dev": {
-                "brianium/paratest": "^6.2|^7.0",
-                "ext-pcntl": "*",
-                "nunomaduro/collision": "^5.3|^6.0|^7.0|^8.0",
-                "orchestra/testbench": "^9.0|^10.0",
-                "pestphp/pest-plugin-laravel": "^1.3|^2.0|^3.0",
-                "phpunit/phpunit": "^9.5|^10|^11",
-                "spatie/laravel-ray": "^1.17"
+                "ext-imagick": "*",
+                "larastan/larastan": "^2.7.0|^3.0",
+                "laravel/pint": "^1.13.7",
+                "nunomaduro/collision": "^7.10|^8.0",
+                "orchestra/testbench": "^8.18|^10.0",
+                "pestphp/pest": "^2.30|^3.7",
+                "pestphp/pest-plugin-arch": "^2.5|^3.0",
+                "pestphp/pest-plugin-laravel": "^2.2|^3.1",
+                "phpstan/extension-installer": "^1.3.1",
+                "phpstan/phpstan-deprecation-rules": "^1.1.4|^2.0",
+                "phpstan/phpstan-phpunit": "^1.3.15|^2.0",
+                "spatie/image": "^3.3.2",
+                "spatie/invade": "^2.1",
+                "spatie/laravel-ray": "^1.33",
+                "spatie/pdf-to-image": "^2.2|^3.1",
+                "spatie/pdf-to-text": "^1.52.1",
+                "spatie/pest-expectations": "^1.5",
+                "spatie/pest-plugin-snapshots": "^2.1",
+                "spatie/pixelmatch-php": "^1.0",
+                "wnx/sidecar-browsershot": "^2.0"
             },
             "type": "library",
             "extra": {
                 "laravel": {
                     "aliases": {
-                        "Signal": "Spatie\\SignalAwareCommand\\Facades\\Signal"
+                        "LaravelPdf": "Pdf"
                     },
                     "providers": [
-                        "Spatie\\SignalAwareCommand\\SignalAwareCommandServiceProvider"
+                        "Spatie\\LaravelPdf\\PdfServiceProvider"
                     ]
                 }
             },
             "autoload": {
+                "files": [
+                    "src/Support/functions.php"
+                ],
                 "psr-4": {
-                    "Spatie\\SignalAwareCommand\\": "src"
+                    "Spatie\\LaravelPdf\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -3552,16 +5760,93 @@
                     "role": "Developer"
                 }
             ],
-            "description": "Handle signals in artisan commands",
-            "homepage": "https://github.com/spatie/laravel-signal-aware-command",
+            "description": "Create PDFs in Laravel apps",
+            "homepage": "https://github.com/spatie/laravel-pdf",
             "keywords": [
                 "laravel",
-                "laravel-signal-aware-command",
+                "laravel-pdf",
                 "spatie"
             ],
             "support": {
-                "issues": "https://github.com/spatie/laravel-signal-aware-command/issues",
-                "source": "https://github.com/spatie/laravel-signal-aware-command/tree/2.1.1"
+                "issues": "https://github.com/spatie/laravel-pdf/issues",
+                "source": "https://github.com/spatie/laravel-pdf/tree/1.8.0"
+            },
+            "time": "2025-09-12T08:05:44+00:00"
+        },
+        {
+            "name": "spatie/laravel-permission",
+            "version": "6.23.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/laravel-permission.git",
+                "reference": "9e41247bd512b1e6c229afbc1eb528f7565ae3bb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/laravel-permission/zipball/9e41247bd512b1e6c229afbc1eb528f7565ae3bb",
+                "reference": "9e41247bd512b1e6c229afbc1eb528f7565ae3bb",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/auth": "^8.12|^9.0|^10.0|^11.0|^12.0",
+                "illuminate/container": "^8.12|^9.0|^10.0|^11.0|^12.0",
+                "illuminate/contracts": "^8.12|^9.0|^10.0|^11.0|^12.0",
+                "illuminate/database": "^8.12|^9.0|^10.0|^11.0|^12.0",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "laravel/passport": "^11.0|^12.0",
+                "laravel/pint": "^1.0",
+                "orchestra/testbench": "^6.23|^7.0|^8.0|^9.0|^10.0",
+                "phpunit/phpunit": "^9.4|^10.1|^11.5"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Spatie\\Permission\\PermissionServiceProvider"
+                    ]
+                },
+                "branch-alias": {
+                    "dev-main": "6.x-dev",
+                    "dev-master": "6.x-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Spatie\\Permission\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Freek Van der Herten",
+                    "email": "freek@spatie.be",
+                    "homepage": "https://spatie.be",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Permission handling for Laravel 8.0 and up",
+            "homepage": "https://github.com/spatie/laravel-permission",
+            "keywords": [
+                "acl",
+                "laravel",
+                "permission",
+                "permissions",
+                "rbac",
+                "roles",
+                "security",
+                "spatie"
+            ],
+            "support": {
+                "issues": "https://github.com/spatie/laravel-permission/issues",
+                "source": "https://github.com/spatie/laravel-permission/tree/6.23.0"
             },
             "funding": [
                 {
@@ -3569,7 +5854,125 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-11-27T09:17:52+00:00"
+            "time": "2025-11-03T20:16:13+00:00"
+        },
+        {
+            "name": "spatie/pdf-to-image",
+            "version": "1.2.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/pdf-to-image.git",
+                "reference": "9a5cb264a99e87e010c65d4ece03b51f821d55bd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/pdf-to-image/zipball/9a5cb264a99e87e010c65d4ece03b51f821d55bd",
+                "reference": "9a5cb264a99e87e010c65d4ece03b51f821d55bd",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.5.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "4.*",
+                "scrutinizer/ocular": "~1.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Spatie\\PdfToImage\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Freek Van der Herten",
+                    "email": "freek@spatie.be",
+                    "homepage": "https://spatie.be",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Convert a pdf to an image",
+            "homepage": "https://github.com/spatie/pdf-to-image",
+            "keywords": [
+                "convert",
+                "image",
+                "pdf",
+                "pdf-to-image",
+                "spatie"
+            ],
+            "support": {
+                "issues": "https://github.com/spatie/pdf-to-image/issues",
+                "source": "https://github.com/spatie/pdf-to-image/tree/1.2.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/spatie",
+                    "type": "github"
+                }
+            ],
+            "time": "2016-12-14T15:37:00+00:00"
+        },
+        {
+            "name": "spatie/pdf-to-text",
+            "version": "1.55.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/pdf-to-text.git",
+                "reference": "c5c6c7fa8aaa34de7eb6cde42b45aec480c8afb6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/pdf-to-text/zipball/c5c6c7fa8aaa34de7eb6cde42b45aec480c8afb6",
+                "reference": "c5c6c7fa8aaa34de7eb6cde42b45aec480c8afb6",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.4",
+                "symfony/process": "^7.0|^8.0"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.18",
+                "pestphp/pest": "^4.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Spatie\\PdfToText\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Freek Van der Herten",
+                    "email": "freek@spatie.be",
+                    "homepage": "https://spatie.be",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Extract text from a pdf",
+            "homepage": "https://github.com/spatie/pdf-to-text",
+            "keywords": [
+                "pdf-to-text",
+                "spatie"
+            ],
+            "support": {
+                "issues": "https://github.com/spatie/pdf-to-text/issues",
+                "source": "https://github.com/spatie/pdf-to-text/tree/1.55.0"
+            },
+            "funding": [
+                {
+                    "url": "https://spatie.be/open-source/support-us",
+                    "type": "custom"
+                }
+            ],
+            "time": "2025-11-24T16:51:50+00:00"
         },
         {
             "name": "spatie/temporary-directory",
@@ -5866,6 +8269,55 @@
                 }
             ],
             "time": "2025-04-27T18:39:23+00:00"
+        },
+        {
+            "name": "thiagoalessio/tesseract_ocr",
+            "version": "2.13.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thiagoalessio/tesseract-ocr-for-php.git",
+                "reference": "232a8cb9d571992f9bd1e263f2f6909cf6c173a1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thiagoalessio/tesseract-ocr-for-php/zipball/232a8cb9d571992f9bd1e263f2f6909cf6c173a1",
+                "reference": "232a8cb9d571992f9bd1e263f2f6909cf6c173a1",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.3 || ^7.0 || ^8.0"
+            },
+            "require-dev": {
+                "phpunit/php-code-coverage": "^2.2.4 || ^9.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "thiagoalessio\\TesseractOCR\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "thiagoalessio",
+                    "email": "thiagoalessio@me.com"
+                }
+            ],
+            "description": "A wrapper to work with Tesseract OCR inside PHP.",
+            "keywords": [
+                "OCR",
+                "Tesseract",
+                "text recognition"
+            ],
+            "support": {
+                "irc": "irc://irc.freenode.net/tesseract-ocr-for-php",
+                "issues": "https://github.com/thiagoalessio/tesseract-ocr-for-php/issues",
+                "source": "https://github.com/thiagoalessio/tesseract-ocr-for-php"
+            },
+            "time": "2023-10-05T21:14:48+00:00"
         },
         {
             "name": "tijsverkoyen/css-to-inline-styles",
