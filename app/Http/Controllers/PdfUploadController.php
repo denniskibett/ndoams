@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\PdfUpload;
@@ -8,6 +7,8 @@ use App\Models\County;
 use App\Models\User;
 use App\Models\Marriage;
 use App\Models\Category;
+use App\Models\ClerkManagement;
+use App\Services\MarriageCreationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -18,15 +19,90 @@ use Imagick;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Helpers\SystemHelper;
 
 class PdfUploadController extends Controller
 {
+    protected $marriageService;
+
+    public function __construct(MarriageCreationService $marriageService)
+    {
+        $this->marriageService = $marriageService;
+    }
+
     public function index(Request $request)
     {
-        $pdfPages = PdfPage::with(['pdfUpload.uploader', 'pdfUpload.county', 'pdfUpload.marriageType'])
-            ->get();
+        $user = Auth::user();
+        $roleName = $user->role->name ?? 'user';
         
-        $years = PdfUpload::select('year')->distinct()->orderBy('year', 'desc')->pluck('year');
+        // ===== BUILD ROLE-BASED QUERY FOR PDF PAGES =====
+        $query = PdfPage::with(['pdfUpload.uploader', 'pdfUpload.county', 'pdfUpload.marriageType']);
+        
+        switch ($roleName) {
+            case 'data_clerk':
+                // Data clerk sees ONLY pages assigned to them that are NOT completed
+                // They work on: pending, assigned, in_progress
+                $query->where('assigned_to', $user->id)
+                    ->whereIn('status', ['pending', 'assigned', 'in_progress']);
+                break;
+                
+            case 'marriage_teller':
+                // Marriage teller sees pages that need review (review_needed)
+                // Get clerk IDs assigned to this teller
+                $clerkIds = ClerkManagement::where('marriage_teller_id', $user->id)
+                    ->pluck('data_clerk_id');
+
+                // Show ONLY their clerks' pages
+                $query->whereIn('assigned_to', $clerkIds)
+                    ->where('status', 'review_needed');
+                break;
+                
+            case 'marriage_registrar':
+                // Marriage registrar sees COMPLETED pages (ready for final approval)
+                // Note: 'under_review' is not a standard status, using 'completed' instead
+                $query->where('status', 'completed');
+                break;
+                
+            case 'ag':
+            case 'attorney_general':
+                // Attorney General sees ONLY PUBLISHED pages
+                $query->where('status', 'completed')
+                    ->whereHas('pdfUpload', function($q) {
+                        $q->where('status', 'published');
+                    });
+                break;
+                
+            case 'admin':
+                // Admin sees everything - no filter
+                break;
+                
+            default:
+                // Regular users see only published
+                $query->where('status', 'completed')
+                    ->whereHas('pdfUpload', function($q) {
+                        $q->where('status', 'published');
+                    });
+                break;
+        }
+        
+        // Determine route for conditional limiting
+        $currentRoute = $request->route()->getName();
+        
+        // Cap PDF pages if on pdf-uploads index and user is not admin
+        if ($currentRoute === 'pdf-uploads.index' && $roleName == 'admin') {
+            $pdfPages = $query->orderBy('created_at', 'desc')->limit(2000)->get();
+        } else {
+            // For dashboard or admin, no limit
+            $pdfPages = $query->orderBy('created_at', 'desc')->get();
+        }
+        
+        // Get years for filter (from all PDFs - can be role-filtered if needed)
+        $years = PdfUpload::select('year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
+        
+        // Get counties for filter
         $counties = County::select('county_code', 'name')
             ->whereNotNull('county_code')
             ->whereNotNull('name')
@@ -35,19 +111,31 @@ class PdfUploadController extends Controller
             ->unique('county_code')
             ->values();
 
-        $statuses = ['active', 'processing', 'archived', 'inactive'];
-
+        // Months array for filter
         $months = [];
         for ($i = 1; $i <= 12; $i++) {
             $monthNum = str_pad($i, 2, '0', STR_PAD_LEFT);
             $months[$monthNum] = date('F', mktime(0, 0, 0, $i, 1));
         }
+
+        // ONLY pdf_pages statuses (not mixing with pdf_uploads)
+        $statuses = [
+            'pending',
+            'assigned',
+            'in_progress',
+            'completed',
+            'review_needed',
+            'skipped'
+        ];
         
         $cardData = $this->getOverviewCardData();
 
         $marriageTypes = Category::where('type', 'marriage_type')
             ->orderBy('name')
             ->get(['id', 'name']);
+        
+        // Pass role to view for debugging (optional)
+        $userRole = $roleName;
         
         return view('pdf-uploads.index', compact(
             'pdfPages',
@@ -56,9 +144,362 @@ class PdfUploadController extends Controller
             'statuses',
             'months',
             'cardData', 
-            'marriageTypes'
+            'marriageTypes',
+            'userRole'
         ));
     }
+
+
+    public function reviewMarriage(Request $request, Marriage $marriage)
+    {
+        $user = Auth::user();
+        $userRole = $user->role->name ?? '';
+        
+        // Allow marriage_teller and marriage_registrar
+        if (!in_array($userRole, ['marriage_teller', 'marriage_registrar', 'admin'])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+        
+        $action = $request->input('action');
+        $notes = $request->input('notes', '');
+        
+        if (!in_array($action, ['approve', 'reject'])) {
+            return response()->json(['success' => false, 'message' => 'Invalid action.'], 400);
+        }
+        
+        DB::beginTransaction();
+        
+        try {
+            // Update marriage basic data
+            $marriageData = $request->only([
+                'certificate_serial', 'marriage_date', 'reg_date', 'venue', 
+                'sub_county', 'ward_id'
+            ]);
+            
+            if (!empty($marriageData)) {
+                // Format data
+                if (isset($marriageData['certificate_serial'])) {
+                    $marriageData['certificate_serial'] = strtoupper($marriageData['certificate_serial']);
+                }
+                if (isset($marriageData['venue'])) {
+                    $marriageData['venue'] = strtoupper($marriageData['venue']);
+                }
+                if (isset($marriageData['sub_county'])) {
+                    $marriageData['sub_county'] = strtoupper($marriageData['sub_county']);
+                }
+                
+                $marriage->update($marriageData);
+            }
+            
+            // Update husband
+            if ($request->has('husband')) {
+                $husbandData = $request->input('husband');
+                $husband = $marriage->spouses()->where('spouse_type', 'husband')->first();
+                if ($husband) {
+                    // Format data
+                    if (isset($husbandData['name'])) $husbandData['name'] = strtoupper($husbandData['name']);
+                    if (isset($husbandData['occupation'])) $husbandData['occupation'] = strtoupper($husbandData['occupation']);
+                    if (isset($husbandData['residence'])) $husbandData['residence'] = strtoupper($husbandData['residence']);
+                    if (isset($husbandData['father_name'])) $husbandData['father_name'] = strtoupper($husbandData['father_name']);
+                    if (isset($husbandData['mother_name'])) $husbandData['mother_name'] = strtoupper($husbandData['mother_name']);
+                    
+                    $husband->update($husbandData);
+                }
+            }
+            
+            // Update wife
+            if ($request->has('wife')) {
+                $wifeData = $request->input('wife');
+                $wife = $marriage->spouses()->where('spouse_type', 'wife')->first();
+                if ($wife) {
+                    // Format data
+                    if (isset($wifeData['name'])) $wifeData['name'] = strtoupper($wifeData['name']);
+                    if (isset($wifeData['occupation'])) $wifeData['occupation'] = strtoupper($wifeData['occupation']);
+                    if (isset($wifeData['residence'])) $wifeData['residence'] = strtoupper($wifeData['residence']);
+                    if (isset($wifeData['father_name'])) $wifeData['father_name'] = strtoupper($wifeData['father_name']);
+                    if (isset($wifeData['mother_name'])) $wifeData['mother_name'] = strtoupper($wifeData['mother_name']);
+                    
+                    $wife->update($wifeData);
+                }
+            }
+            
+            // Update witnesses
+            if ($request->has('witnesses')) {
+                $witnessesData = $request->input('witnesses');
+                $witnessList = $marriage->witnesses()->get();
+                
+                if ($witnessList->count() >= 1 && isset($witnessesData['witness1'])) {
+                    $witness1Data = [
+                        'name' => strtoupper($witnessesData['witness1']['name']),
+                        'spouse_side' => $witnessesData['witness1']['side']
+                    ];
+                    $witnessList[0]->update($witness1Data);
+                }
+                
+                if ($witnessList->count() >= 2 && isset($witnessesData['witness2'])) {
+                    $witness2Data = [
+                        'name' => strtoupper($witnessesData['witness2']['name']),
+                        'spouse_side' => $witnessesData['witness2']['side']
+                    ];
+                    $witnessList[1]->update($witness2Data);
+                }
+            }
+            
+            // Update statuses based on action
+            $pdfPage = $marriage->pdfPage;
+            
+            if ($action === 'approve') {
+                // Approve: mark as completed
+                $pdfPage->update([
+                    'status' => 'completed',
+                    'completed_by' => $user->id,
+                    'completed_at' => now(),
+                ]);
+                
+                $marriage->update([
+                    'system_status' => 'Completed',
+                    'verified_by' => $user->id,
+                    'reviewed_at' => now(),
+                    'has_errors' => false,
+                ]);
+                
+                $message = 'Marriage approved and marked as completed.';
+            } else {
+                // Reject: send back to clerk as skipped
+                $pdfPage->update([
+                    'status' => 'skipped',
+                    'completed_by' => null,
+                    'completed_at' => null,
+                ]);
+                
+                $marriage->update([
+                    'system_status' => 'Skipped',
+                    'has_errors' => true,
+                ]);
+                
+                $message = 'Marriage rejected and sent back to clerk for review.';
+            }
+            
+            // Add to notes history
+            $notesData = is_string($pdfPage->notes) ? json_decode($pdfPage->notes, true) : ($pdfPage->notes ?? []);
+            if (!is_array($notesData)) {
+                $notesData = [];
+            }
+            
+            $notesData['review_history'][] = [
+                'action' => $action,
+                'message' => $message,
+                'notes' => $notes,
+                'user' => $user->name,
+                'user_role' => $userRole,
+                'timestamp' => now()->toISOString(),
+            ];
+            
+            $pdfPage->update(['notes' => json_encode($notesData)]);
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'new_page_status' => $pdfPage->fresh()->status,
+                'new_marriage_status' => $marriage->fresh()->system_status
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Marriage review failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process review: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function updatePageStatus(Request $request, PdfPage $page)
+    {
+        $user = Auth::user();
+        $roleName = $user->role->name ?? 'user';
+        $action = $request->input('action');
+        $notes = $request->input('notes', '');
+        
+        $validActions = [
+            'data_clerk' => ['submit_for_review', 'skip_page'],
+            'marriage_teller' => ['approve_completed', 'reject_to_clerk'],
+            'marriage_registrar' => ['publish', 'send_back_to_teller'],
+        ];
+        
+        if (!in_array($action, $validActions[$roleName] ?? [])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid action for your role.'
+            ], 403);
+        }
+        
+        try {
+            DB::beginTransaction();
+            
+            $newStatus = match($action) {
+                'submit_for_review' => 'review_needed',
+                'skip_page' => 'skipped',
+                'approve_completed' => 'completed',
+                'reject_to_clerk' => 'skipped', // Send back to clerk as skipped
+                'publish' => 'published',
+                'send_back_to_teller' => 'review_needed',
+                default => null
+            };
+            
+            if (!$newStatus) {
+                throw new \Exception('Invalid action');
+            }
+            
+            // Update notes as JSON with action history
+            $notesData = is_string($page->notes) ? json_decode($page->notes, true) : ($page->notes ?? []);
+            if (!is_array($notesData)) {
+                $notesData = [];
+            }
+            
+            $actionMessages = [
+                'submit_for_review' => 'Submitted for review by ' . $user->name,
+                'skip_page' => 'Skipped by ' . $user->name . ($notes ? ': ' . $notes : ''),
+                'approve_completed' => 'Approved as completed by ' . $user->name,
+                'reject_to_clerk' => 'Rejected back to clerk by ' . $user->name . ($notes ? ': ' . $notes : ''),
+                'publish' => 'Published by ' . $user->name,
+                'send_back_to_teller' => 'Sent back to teller for review by ' . $user->name . ($notes ? ': ' . $notes : ''),
+            ];
+            
+            $notesData['history'][] = [
+                'action' => $action,
+                'message' => $actionMessages[$action],
+                'user' => $user->name,
+                'user_id' => $user->id,
+                'timestamp' => now()->toISOString(),
+            ];
+            
+            if ($notes) {
+                $notesData['latest_note'] = $notes;
+                $notesData['latest_note_by'] = $user->name;
+                $notesData['latest_note_at'] = now()->toISOString();
+            }
+            
+            $page->update([
+                'status' => $newStatus,
+                'notes' => json_encode($notesData),
+            ]);
+            
+            // If publishing, update the PDF upload status
+            if ($action === 'publish') {
+                $page->pdfUpload->update(['status' => 'published']);
+            }
+            
+            DB::commit();
+            
+            // Return JSON response for AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $actionMessages[$action],
+                    'new_status' => $newStatus,
+                    'page_status' => $page->fresh()->status,
+                    'redirect_url' => $action === 'publish' ? route('pdf-uploads.index') : null
+                ]);
+            }
+            
+            // For non-AJAX requests, redirect back
+            return redirect()->back()->with('success', $actionMessages[$action]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    private function getNewStatusByAction($action, $roleName, $page)
+    {
+        switch ($action) {
+            case 'submit_for_review':
+                return $page->status === 'in_progress' ? 'review_needed' : null;
+                
+            case 'skip_page':
+                return 'skipped';
+                
+            case 'approve_completed':
+                return 'completed';
+                
+            case 'reject_to_clerk':
+                return 'in_progress';
+                
+            case 'publish':
+                return 'completed'; // Status remains completed, PDF upload status changes
+                
+            case 'send_back_to_teller':
+                return 'review_needed';
+                
+            default:
+                return null;
+        }
+    }
+
+
+    private function updateNotesWithAction($currentNotes, $action, $notes, $user)
+    {
+        $notesData = is_string($currentNotes) ? json_decode($currentNotes, true) : ($currentNotes ?? []);
+        if (!is_array($notesData)) {
+            $notesData = [];
+        }
+        
+        $actionMessages = [
+            'submit_for_review' => 'Submitted for review by ' . $user->name,
+            'skip_page' => 'Skipped by ' . $user->name . ($notes ? ': ' . $notes : ''),
+            'approve_completed' => 'Approved as completed by ' . $user->name,
+            'reject_to_clerk' => 'Rejected back to clerk by ' . $user->name . ($notes ? ': ' . $notes : ''),
+            'publish' => 'Published by ' . $user->name,
+            'send_back_to_teller' => 'Sent back to teller for review by ' . $user->name . ($notes ? ': ' . $notes : ''),
+        ];
+        
+        $notesData['history'][] = [
+            'action' => $action,
+            'message' => $actionMessages[$action] ?? $action,
+            'user' => $user->name,
+            'user_id' => $user->id,
+            'timestamp' => now()->toISOString(),
+        ];
+        
+        if ($notes) {
+            $notesData['latest_note'] = $notes;
+            $notesData['latest_note_by'] = $user->name;
+            $notesData['latest_note_at'] = now()->toISOString();
+        }
+        
+        return json_encode($notesData);
+    }
+
+    private function getSuccessMessage($action)
+    {
+        $messages = [
+            'submit_for_review' => 'Page submitted for review successfully!',
+            'skip_page' => 'Page has been skipped.',
+            'approve_completed' => 'Page marked as completed!',
+            'reject_to_clerk' => 'Page sent back to clerk for corrections.',
+            'publish' => 'Page published successfully!',
+            'send_back_to_teller' => 'Page sent back to teller for review.',
+        ];
+        
+        return $messages[$action] ?? 'Status updated successfully!';
+    }
+
 
     public function create()
     {
@@ -87,10 +528,11 @@ class PdfUploadController extends Controller
         return view('pdf-uploads.create', compact('counties', 'months'));
     }
 
+
     public function store(Request $request)
     {
         $request->validate([
-            'year' => 'required|digits:4|integer|min:2000|max:' . date('Y'),
+            'year' => 'required|digits:4|integer|min:1960|max:' . date('Y'),
             'month' => 'required|string|max:20',
             'county_code' => 'required|string|max:10',
             'pdf_file' => 'required|file|mimes:pdf|max:102400',
@@ -100,37 +542,59 @@ class PdfUploadController extends Controller
         try {
             $file = $request->file('pdf_file');
 
+            // Check for duplicate files
             $fileHash = hash_file('sha256', $file->getRealPath());
-
             $existing = PdfUpload::where('file_hash', $fileHash)->first();
 
             if ($existing) {
-                return back()->withErrors([
-                    'pdf_file' => 'This PDF has already been uploaded. Duplicate files are not allowed.',
-                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This PDF has already been uploaded. Duplicate files are not allowed.',
+                ], 422);
             }
 
             // Generate random 40-character filename + .pdf extension
             $randomFilename = Str::random(40) . '.pdf';
 
-            $path = 'pdf-uploads/' . $request->year . '/'
-                . str_pad($request->month, 2, '0', STR_PAD_LEFT) . '/'
-                . $randomFilename;
+            // Create directory structure
+            $year = $request->year;
+            $month = str_pad($request->month, 2, '0', STR_PAD_LEFT);
+            $yearMonthDir = 'pdf-uploads/' . $year . '/' . $month;
+            
+            // Ensure directory exists
+            if (!Storage::disk('public')->exists($yearMonthDir)) {
+                Storage::disk('public')->makeDirectory($yearMonthDir, 0755, true);
+            }
 
+            $path = $yearMonthDir . '/' . $randomFilename;
+
+            // Store the file
             Storage::disk('public')->put(
                 $path,
                 file_get_contents($file->getRealPath())
             );
 
-            $pageCount = $this->getPdfPageCount($file);
+            // Verify file was stored correctly
+            if (!Storage::disk('public')->exists($path)) {
+                throw new \Exception('Failed to store file');
+            }
 
+            // Get page count
+            try {
+                $pageCount = $this->getPdfPageCount($file);
+            } catch (\Exception $e) {
+                Log::warning('Failed to get page count for PDF: ' . $e->getMessage());
+                $pageCount = 1;
+            }
+
+            // Create PDF record
             $pdfUpload = PdfUpload::create([
-                'year' => $request->year,
-                'month' => str_pad($request->month, 2, '0', STR_PAD_LEFT), // Store as padded
+                'year' => $year,
+                'month' => $month,
                 'county_code' => $request->county_code,
-                'filename' => $randomFilename, // Random filename
+                'filename' => $randomFilename,
                 'file_size' => $file->getSize(),
-                'name' => $file->getClientOriginalName(), // Original name for display
+                'name' => $file->getClientOriginalName(),
                 'storage_path' => $path,
                 'total_pages' => $pageCount,
                 'file_hash' => $fileHash,
@@ -140,17 +604,49 @@ class PdfUploadController extends Controller
                 'uuid' => Str::uuid()->toString(),
             ]);
 
+            // Create PDF pages
             $this->createPdfPages($pdfUpload, $pageCount);
+            
+            // Generate thumbnail (non-blocking - run in background)
+            try {
+                $this->generatePdfThumbnail($pdfUpload);
+            } catch (\Exception $e) {
+                Log::warning('Thumbnail generation failed: ' . $e->getMessage());
+            }
 
-            // Generate thumbnail
-            $this->generatePdfThumbnail($pdfUpload);
+            Log::info('PDF uploaded successfully via regular upload', [
+                'id' => $pdfUpload->id,
+                'name' => $pdfUpload->name,
+                'size' => $file->getSize(),
+                'pages' => $pageCount
+            ]);
 
-            return redirect()
-                ->route('pdf-uploads.show', $pdfUpload)
-                ->with('success', "PDF uploaded with {$pageCount} pages. Ready for data entry.");
+            return response()->json([
+                'success' => true,
+                'message' => 'PDF uploaded successfully',
+                'data' => [
+                    'id' => $pdfUpload->id,
+                    'name' => $pdfUpload->name,
+                    'page_count' => $pageCount,
+                    'file_size' => $file->getSize()
+                ]
+            ], 200);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
-            return back()->with('error', 'Upload failed: ' . $e->getMessage());
+            Log::error('PDF Upload Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Upload failed: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -273,8 +769,7 @@ class PdfUploadController extends Controller
             // Sort chunks by index
             sort($chunkFiles);
 
-            // Generate random filename like the regular uploads (e.g., "hAK8tFaHhNUBXAEkjjp40u92MTsBhV171hPGwwde.pdf")
-            // 40 characters random string + .pdf extension
+            // Generate random filename like the regular uploads
             $randomFilename = Str::random(40) . '.pdf';
 
             // Create directory structure
@@ -326,7 +821,6 @@ class PdfUploadController extends Controller
 
             // Check if file is a valid PDF
             if (!function_exists('mime_content_type')) {
-                // Fallback for systems without mime_content_type
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $mimeType = finfo_file($finfo, $finalFilePath);
                 finfo_close($finfo);
@@ -336,12 +830,10 @@ class PdfUploadController extends Controller
 
             if ($mimeType !== 'application/pdf') {
                 Log::error('Invalid MIME type for assembled file: ' . $mimeType);
-                // Try to check if it's at least a binary file
                 $fileContent = file_get_contents($finalFilePath, false, null, 0, 5);
                 if (strpos($fileContent, '%PDF-') === 0) {
                     Log::info('File appears to be PDF despite MIME type');
                 } else {
-                    // Clean up invalid file
                     unlink($finalFilePath);
                     throw new \Exception('The uploaded file is not a valid PDF (MIME: ' . $mimeType . ')');
                 }
@@ -353,7 +845,6 @@ class PdfUploadController extends Controller
             // Check for duplicate files
             $existing = PdfUpload::where('file_hash', $fileHash)->first();
             if ($existing) {
-                // Clean up
                 foreach ($chunkFiles as $chunkFile) {
                     unlink($chunkFile);
                 }
@@ -372,7 +863,7 @@ class PdfUploadController extends Controller
                 $pageCount = $this->getPdfPageCountFromPath($finalFilePath);
             } catch (\Exception $e) {
                 Log::error('Failed to get page count: ' . $e->getMessage());
-                $pageCount = 1; // Default to 1 if we can't determine
+                $pageCount = 1;
             }
             
             // Generate UUID
@@ -381,11 +872,11 @@ class PdfUploadController extends Controller
             // Create PDF record with random filename
             $pdfUpload = PdfUpload::create([
                 'year' => $year,
-                'month' => $month, // Store as padded number (e.g., "07" not "7")
+                'month' => $month,
                 'county_code' => $request->county_code,
-                'filename' => $randomFilename, // Random filename like other records
+                'filename' => $randomFilename,
                 'file_size' => $totalSize,
-                'name' => $originalName, // Original name for display
+                'name' => $originalName,
                 'storage_path' => $finalPath,
                 'total_pages' => $pageCount,
                 'file_hash' => $fileHash,
@@ -397,8 +888,6 @@ class PdfUploadController extends Controller
 
             // Create PDF pages
             $this->createPdfPages($pdfUpload, $pageCount);
-
-            // Generate thumbnail (optional but recommended)
             $this->generatePdfThumbnail($pdfUpload);
 
             // Clean up chunks
@@ -433,7 +922,6 @@ class PdfUploadController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            // Clean up on error
             if (isset($tempDir) && file_exists($tempDir)) {
                 $chunkFiles = glob($tempDir . '/chunk_*');
                 foreach ($chunkFiles as $chunkFile) {
@@ -540,6 +1028,17 @@ class PdfUploadController extends Controller
                 ->get();
         }
 
+        // Get all wards for this county with constituency info
+        $wards = County::where('county_code', $pdfUpload->county_code)
+            ->whereNotNull('wards')
+            ->where('wards', '!=', '')
+            ->whereNotNull('constituency')
+            ->where('constituency', '!=', '')
+            ->select('id', 'wards', 'constituency')
+            ->orderBy('constituency')
+            ->orderBy('wards')
+            ->get(); // Remove ->toArray()
+
         $marriageStatusId = Category::where('type', 'marriage_status')
             ->where('name', 'Completed')
             ->value('id') ?? null;
@@ -551,6 +1050,22 @@ class PdfUploadController extends Controller
         $marriageTypes = Category::where('type', 'marriage_type')
             ->orderBy('name')
             ->get();
+
+        $commonOccupations = [
+            'Teacher', 'Doctor', 'Engineer', 'Lawyer', 'Accountant',
+            'Businessman', 'Businesswoman', 'Civil Servant', 'Farmer',
+            'Mechanic', 'Driver', 'Nurse', 'Police Officer', 'Soldier',
+            'Lecturer', 'Journalist', 'Architect', 'Pharmacist', 'Dentist',
+            'Shopkeeper', 'Clerk', 'Manager', 'Director', 'Consultant',
+            'Secretary', 'Receptionist', 'Cleaner', 'Guard', 'Chef',
+            'Waiter', 'Waitress', 'Bartender', 'Househelp', 'Artisan',
+            'Carpenter', 'Plumber', 'Electrician', 'Mason', 'Painter',
+            'Tailor', 'Designer', 'Photographer', 'Videographer', 'Editor',
+            'DECEASED'
+        ];
+        
+        $primaryColor = SystemHelper::primaryColor();
+        $secondaryColor = SystemHelper::secondaryColor();
         
         return view('pdf-uploads.show', compact(
             'pdfPage',
@@ -562,10 +1077,14 @@ class PdfUploadController extends Controller
             'relatedPages',
             'counties',
             'subCounties',
+            'wards',
             'marriageStatusId',
             'verificationStatusId',
             'marriageTypes',
-            'month'
+            'month',
+            'primaryColor',
+            'secondaryColor',
+            'commonOccupations'
         ));
     }
 
@@ -610,22 +1129,63 @@ class PdfUploadController extends Controller
     private function extractPageForDisplay(PdfUpload $pdfUpload, $pageNumber)
     {
         try {
+            // Always extract as PDF, bypassing Imagick
+            return $this->extractPageAsPdf($pdfUpload, $pageNumber);
+        } catch (\Exception $e) {
+            Log::error('Error extracting page for display: ' . $e->getMessage());
+            return null; // or handle gracefully
+        }
+    }
+
+    private function extractPageAsImage(PdfUpload $pdfUpload, $pageNumber)
+    {
+        try {
+            $pdfPath = Storage::disk('public')->path($pdfUpload->storage_path);
+            
+            if (!file_exists($pdfPath)) {
+                throw new \Exception('PDF file not found at path: ' . $pdfPath);
+            }
+            
             if (!extension_loaded('imagick') || !class_exists('Imagick')) {
-                Log::warning('Imagick not available for page extraction');
-                return $this->extractPageAsPdf($pdfUpload, $pageNumber);
+                throw new \Exception('Imagick extension is not available');
             }
             
             $imagick = new \Imagick();
             $imagick->setResolution(150, 150);
-            $pdfPath = Storage::disk('public')->path($pdfUpload->storage_path);
             $imagick->readImage($pdfPath . '[' . ($pageNumber - 1) . ']');
-            $imagick->setImageFormat('png');
+            
+            $originalWidth = $imagick->getImageWidth();
+            $originalHeight = $imagick->getImageHeight();
+            
+            $maxWidth = 1200;
+            $maxHeight = 1600;
+            
+            if ($originalWidth > $maxWidth || $originalHeight > $maxHeight) {
+                $scale = min($maxWidth / $originalWidth, $maxHeight / $originalHeight);
+                $newWidth = round($originalWidth * $scale);
+                $newHeight = round($originalHeight * $scale);
+                $imagick->resizeImage($newWidth, $newHeight, \Imagick::FILTER_LANCZOS, 1);
+            }
+            
+            $imagick->setImageFormat('jpeg');
+            $imagick->setImageCompression(\Imagick::COMPRESSION_JPEG);
+            $imagick->setImageCompressionQuality(85);
             $imagick->setImageBackgroundColor('white');
             $imagick = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
             
-            return base64_encode($imagick->getImageBlob());
+            $imageBlob = $imagick->getImageBlob();
+            $imagick->clear();
+            $imagick->destroy();
+            
+            return 'data:image/jpeg;base64,' . base64_encode($imageBlob);
+            
         } catch (\Exception $e) {
-            Log::error('Error extracting page for display: ' . $e->getMessage());
+            Log::error('Error extracting page as image: ' . $e->getMessage(), [
+                'pdf_id' => $pdfUpload->id,
+                'page' => $pageNumber,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return $this->extractPageAsPdf($pdfUpload, $pageNumber);
         }
     }
@@ -636,6 +1196,10 @@ class PdfUploadController extends Controller
             $pdf = new Fpdi();
             $pdfPath = Storage::disk('public')->path($pdfUpload->storage_path);
             
+            if (!file_exists($pdfPath)) {
+                throw new \Exception('PDF file not found');
+            }
+            
             $pageCount = $pdf->setSourceFile($pdfPath);
             
             if ($pageNumber > $pageCount) {
@@ -643,37 +1207,10 @@ class PdfUploadController extends Controller
             }
             
             $templateId = $pdf->importPage($pageNumber);
-            
             $size = $pdf->getTemplateSize($templateId);
             
-            $maxWidth = 210;
-            $maxHeight = 297;
-            
-            $originalWidth = $size['width'];
-            $originalHeight = $size['height'];
-            
-            $scale = min($maxWidth / $originalWidth, $maxHeight / $originalHeight);
-            
-            if ($scale > 1) {
-                $scale = 1;
-            }
-            
-            $scaledWidth = $originalWidth * $scale;
-            $scaledHeight = $originalHeight * $scale;
-            
-            $x = ($maxWidth - $scaledWidth) / 2;
-            $y = ($maxHeight - $scaledHeight) / 2;
-            
-            $pdf->AddPage();
-            
-            $pdf->useTemplate(
-                $templateId, 
-                $x,
-                $y,
-                $scaledWidth,
-                $scaledHeight,
-                true
-            );
+            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+            $pdf->useTemplate($templateId, 0, 0, $size['width'], $size['height']);
             
             $pageContent = $pdf->Output('S');
             
@@ -684,8 +1221,6 @@ class PdfUploadController extends Controller
             return null;
         }
     }
-
-    // Removed uploadLargeFile and processUpload methods
 
     public function edit(PdfUpload $pdfUpload)
     {
@@ -702,7 +1237,7 @@ class PdfUploadController extends Controller
     public function update(Request $request, PdfUpload $pdfUpload)
     {
         $request->validate([
-            'year' => 'required|digits:4|integer|min:2000|max:' . date('Y'),
+            'year' => 'required|digits:4|integer|min:1960|max:' . date('Y'),
             'month' => 'required|string|max:20',
             'county_code' => 'required|string|max:10',
             'pdf_upload_status' => 'required|in:uploaded,processing,ready,completed,archived',
@@ -717,7 +1252,6 @@ class PdfUploadController extends Controller
                 Storage::disk('public')->delete($pdfUpload->storage_path);
                 
                 $file = $request->file('pdf_file');
-                
                 $fileHash = hash_file('sha256', $file->getRealPath());
                 
                 $existing = PdfUpload::where('file_hash', $fileHash)
@@ -803,19 +1337,14 @@ class PdfUploadController extends Controller
     public function destroy(PdfUpload $pdfUpload)
     {
         try {
-            // Delete the PDF file from storage
             Storage::disk('public')->delete($pdfUpload->storage_path);
             
-            // Delete thumbnail if exists
             if ($pdfUpload->thumbnail_path) {
                 Storage::disk('public')->delete($pdfUpload->thumbnail_path);
             }
             
-            // Delete all related records using relationships
             $pdfUpload->pdfPages()->delete();
             $pdfUpload->marriages()->delete();
-            
-            // Delete the pdfUpload record
             $pdfUpload->delete();
             
             return response()->json([
@@ -865,40 +1394,164 @@ class PdfUploadController extends Controller
         
         return response()->file(public_path('images/default-pdf-thumb.png'));
     }
-    
+
     private function getOverviewCardData()
     {
-        $totalRecords = PdfPage::count();
-        $todayRecords = PdfPage::whereDate('created_at', today())->count();
+        $user = Auth::user();
+        $roleName = $user->role->name ?? 'user';
         
-        $totalStorageBytes = PdfUpload::sum('file_size');
-        $storageUsedMB = round($totalStorageBytes / (1024 * 1024), 2);
-        $storageUsedFormatted = $storageUsedMB . ' MB';
+        // Base counts (global - for admin)
+        $totalPDFsAll = PdfUpload::count();
+        $totalStorageAll = PdfUpload::sum('file_size');
+        $storageUsedMB = round($totalStorageAll / (1024 * 1024), 2);
         
-        $storageRecorded = $this->getStorageRecorded();
+        // Today's counts
+        $pdfsToday = PdfUpload::whereDate('created_at', today())->count();
+        $marriagesToday = Marriage::whereDate('created_at', today())->count();
+        $publishedToday = PdfUpload::whereDate('created_at', today())->where('status', 'published')->count();
         
-        $totalPDFs = PdfUpload::count();
-        $linkedPDFs = PdfUpload::whereHas('pages')->count();
-        
-        $storageLimitMB = 1024;
-        $storagePercentage = $totalPDFs > 0 ? round(($storageUsedMB / $storageLimitMB) * 100, 1) : 0;
-        
-        $dataClerksCount = User::whereHas('role', function($query) {
-            $query->where('name', 'data_clerk');
-        })->count();
-        
-        return [
-            'total_records' => number_format($totalRecords),
-            'today_records' => number_format($todayRecords),
-            'storage_used_formatted' => $storageUsedFormatted,
-            'storage_used_mb' => $storageUsedMB,
-            'storage_percentage' => $storagePercentage,
-            'storage_recorded' => $storageRecorded,
-            'linked_pdfs' => number_format($linkedPDFs),
-            'total_pdfs' => number_format($totalPDFs),
-            'data_clerks' => number_format($dataClerksCount),
-            'completion_rate' => $totalPDFs > 0 ? round(($linkedPDFs / $totalPDFs) * 100, 1) : 0,
+        // Initialize role-specific stats
+        $stats = [
+            // Common stats
+            'total_pdfs' => $totalPDFsAll,
+            'storage_used' => $storageUsedMB,
+            'storage_formatted' => $storageUsedMB . ' MB',
+            'pdfs_today' => $pdfsToday,
+            'marriages_today' => $marriagesToday,
+            'published_today' => $publishedToday,
+            
+            // Role-specific will be filled below
+            'my_assigned' => 0,
+            'my_assigned_today' => 0,
+            'my_completed' => 0,
+            'my_completed_today' => 0,
+            'my_pending' => 0,
+            'my_progress' => 0,
+            'team_total' => 0,
+            'team_new_today' => 0,
+            'team_completed' => 0,
+            'team_completed_today' => 0,
+            'team_pending' => 0,
+            'active_clerks' => 0,
+            'active_tellers' => 0,
+            'verification_queue' => 0,
+            'queue_new_today' => 0,
+            'verified_today' => 0,
+            'verified_total' => 0,
+            'pending_verification' => 0,
+            'total_marriages' => 0,
+            'published_total' => 0,
+            'completion_rate' => 0,
         ];
+        
+        switch ($roleName) {
+            case 'data_clerk':
+                // Data clerk sees their own work
+                $myAssigned = PdfPage::where('assigned_to', $user->id)->count();
+                $myAssignedToday = PdfPage::where('assigned_to', $user->id)
+                    ->whereDate('assigned_at', today())
+                    ->count();
+                $myCompleted = PdfPage::where('assigned_to', $user->id)
+                    ->whereIn('status', ['completed', 'review_needed'])
+                    ->count();
+                $myCompletedToday = PdfPage::where('assigned_to', $user->id)
+                    ->whereIn('status', ['completed', 'review_needed'])
+                    ->whereDate('updated_at', today())
+                    ->count();
+                $myPending = PdfPage::where('assigned_to', $user->id)
+                    ->whereNotIn('status', ['completed', 'review_needed'])
+                    ->count();
+                
+                $stats['my_assigned'] = $myAssigned;
+                $stats['my_assigned_today'] = $myAssignedToday;
+                $stats['my_completed'] = $myCompleted;
+                $stats['my_completed_today'] = $myCompletedToday;
+                $stats['my_pending'] = $myPending;
+                $stats['my_progress'] = $myAssigned > 0 
+                    ? round(($myCompleted / $myAssigned) * 100, 1) 
+                    : 0;
+                $stats['total_marriages'] = Marriage::whereHas('pdfPage', function($q) use ($user) {
+                    $q->where('assigned_to', $user->id);
+                })->count();
+                $stats['marriages_today'] = Marriage::whereHas('pdfPage', function($q) use ($user) {
+                    $q->where('assigned_to', $user->id);
+                })->whereDate('created_at', today())->count();
+                break;
+                
+            case 'marriage_teller':
+                // Teller sees their team's work
+                $clerkIds = ClerkManagement::where('marriage_teller_id', $user->id)
+                    ->pluck('data_clerk_id');
+                
+                if ($clerkIds->isNotEmpty()) {
+                    $teamTotal = PdfPage::whereIn('assigned_to', $clerkIds)->count();
+                    $teamNewToday = PdfPage::whereIn('assigned_to', $clerkIds)
+                        ->whereDate('assigned_at', today())
+                        ->count();
+                    $teamCompleted = PdfPage::whereIn('assigned_to', $clerkIds)
+                        ->whereIn('status', ['completed', 'review_needed'])
+                        ->count();
+                    $teamCompletedToday = PdfPage::whereIn('assigned_to', $clerkIds)
+                        ->whereIn('status', ['completed', 'review_needed'])
+                        ->whereDate('updated_at', today())
+                        ->count();
+                    $teamPending = PdfPage::whereIn('assigned_to', $clerkIds)
+                        ->whereNotIn('status', ['completed', 'review_needed'])
+                        ->count();
+                    
+                    $stats['team_total'] = $teamTotal;
+                    $stats['team_new_today'] = $teamNewToday;
+                    $stats['team_completed'] = $teamCompleted;
+                    $stats['team_completed_today'] = $teamCompletedToday;
+                    $stats['team_pending'] = $teamPending;
+                    $stats['active_clerks'] = $clerkIds->count();
+                    $stats['completion_rate'] = $teamTotal > 0 
+                        ? round(($teamCompleted / $teamTotal) * 100, 1) 
+                        : 0;
+                }
+                break;
+                
+            case 'marriage_registrar':
+                // Registrar sees verification stats
+                $stats['verification_queue'] = PdfPage::where('status', 'review_needed')->count();
+                $stats['queue_new_today'] = PdfPage::where('status', 'review_needed')
+                    ->whereDate('updated_at', today())
+                    ->count();
+                $stats['verified_today'] = Marriage::whereDate('reviewed_at', today())->count();
+                $stats['verified_total'] = Marriage::whereNotNull('reviewed_at')->count();
+                $stats['pending_verification'] = PdfPage::where('status', 'completed')->count();
+                $stats['total_marriages'] = Marriage::count();
+                $stats['marriages_today'] = Marriage::whereDate('created_at', today())->count();
+                break;
+                
+            case 'admin':
+                // Admin sees everything
+                $stats['total_pdfs'] = $totalPDFsAll;
+                $stats['pdfs_today'] = $pdfsToday;
+                $stats['total_marriages'] = Marriage::count();
+                $stats['marriages_today'] = $marriagesToday;
+                $stats['published_total'] = PdfUpload::where('status', 'published')->count();
+                $stats['published_today'] = $publishedToday;
+                $stats['active_clerks'] = User::where('role_id', 4)->count();
+                $stats['active_tellers'] = User::where('role_id', 3)->count();
+                $stats['verification_queue'] = PdfPage::where('status', 'review_needed')->count();
+                $stats['completed_total'] = PdfPage::where('status', 'completed')->count();
+                $stats['completion_rate'] = $totalPDFsAll > 0 
+                    ? round((PdfPage::where('status', 'completed')->count() / PdfPage::count()) * 100, 1)
+                    : 0;
+                break;
+                
+            default:
+                // Default user view
+                $stats['total_marriages'] = Marriage::where('status', 'published')->count();
+                $stats['published_total'] = PdfUpload::where('status', 'published')->count();
+                $stats['published_today'] = PdfUpload::whereDate('created_at', today())
+                    ->where('status', 'published')
+                    ->count();
+                break;
+        }
+        
+        return $stats;
     }
 
     private function getStorageRecorded()
@@ -908,22 +1561,6 @@ class PdfUploadController extends Controller
         $storageLimitGB = 1;
         
         return $storageUsedMB . ' MB / ' . $storageLimitGB . ' GB';
-    }
-    
-    private function calculateAverageCompletionRate()
-    {
-        $pdfs = PdfUpload::all();
-        
-        if ($pdfs->isEmpty()) {
-            return 0;
-        }
-        
-        $totalCompletion = 0;
-        foreach ($pdfs as $pdf) {
-            $totalCompletion += $this->calculatePdfCompletionRate($pdf);
-        }
-        
-        return round($totalCompletion / $pdfs->count(), 1);
     }
     
     private function calculatePdfCompletionRate(PdfUpload $pdfUpload)
@@ -942,7 +1579,7 @@ class PdfUploadController extends Controller
         $completedFields = count(array_filter($fields));
         return $completedFields > 0 ? round(($completedFields / count($fields)) * 100) : 0;
     }
-    
+
     private function getPdfPageCount($file)
     {
         try {
@@ -973,6 +1610,7 @@ class PdfUploadController extends Controller
         }
     }
     
+  
     private function generatePdfThumbnail($pdfUpload)
     {
         try {
@@ -1099,7 +1737,6 @@ class PdfUploadController extends Controller
             'updated_count' => $count,
         ]);
     }
-    
 
     public function getUserUploads($userId)
     {
@@ -1244,10 +1881,10 @@ class PdfUploadController extends Controller
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
-                ->orWhere('county_code', 'like', "%{$request->search}%")
-                ->orWhereHas('county', function($q) use ($request) {
-                    $q->where('name', 'like', "%{$request->search}%");
-                });
+                  ->orWhere('county_code', 'like', "%{$request->search}%")
+                  ->orWhereHas('county', function($q) use ($request) {
+                      $q->where('name', 'like', "%{$request->search}%");
+                  });
             });
         }
         
@@ -1302,94 +1939,178 @@ class PdfUploadController extends Controller
             'overallStats'
         ));
     }
-        
+    
     public function quickCreateFromPage(Request $request)
     {
-        Log::info('🎯 QUICK CREATE METHOD CALLED!', [
-            'time' => now(),
-            'user' => auth()->id(),
-            'data' => $request->all()
+        // ==================== DEBUG STAGE 1: RAW REQUEST ====================
+        Log::info('========== 🔍 QUICK CREATE DEBUG START ==========');
+        Log::info('STAGE 1 - RAW REQUEST DATA:', [
+            'all_input' => $request->all(),
+            'has_ward_id' => $request->has('ward_id'),
+            'ward_id_raw_value' => $request->input('ward_id'),
+            'ward_id_type' => gettype($request->input('ward_id')),
+            'certificate_serial' => $request->input('certificate_serial'),
+            'sub_county' => $request->input('sub_county'),
+            'marriage_date' => $request->input('marriage_date'),
+            'reg_date' => $request->input('reg_date'),
+            'venue' => $request->input('venue'),
         ]);
         
         $user = Auth::user();
 
-        if (! $user->isTeller() && ! $user->isDataClerk() && ! $user->isAdmin()) {
+        // ==================== DEBUG STAGE 2: USER AUTH ====================
+        Log::info('STAGE 2 - USER CHECK:', [
+            'user_id' => $user->id,
+            'user_role' => $user->role->name ?? 'unknown',
+            'is_teller' => $user->isTeller(),
+            'is_clerk' => $user->isDataClerk(),
+            'is_admin' => $user->isAdmin(),
+            'is_registrar' => $user->isRegistrar()
+        ]);
+
+        if (! $user->isTeller() && ! $user->isDataClerk() && ! $user->isRegistrar() && ! $user->isAdmin()) {
+            Log::error('STAGE 2 - AUTHORIZATION FAILED');
             return redirect()->back()->with('error', 'Unauthorized action.');
         }
 
-        $validated = $request->validate([
-            'pdf_page_id'        => 'required|exists:pdf_pages,id',
-            'pdf_id'             => 'required|exists:pdf_uploads,id',
-            'certificate_serial' => 'required|string|max:255|unique:marriages,certificate_serial',
-            'marriage_date'      => 'required|date',
-            'reg_date'           => 'required|date',
-            'venue'              => 'required|string|max:255',
-            'sub_county'         => 'required|string|max:255',
-            'county'             => 'required|string|max:255',
-            'year'               => 'required|integer',
-            'month'              => 'required|integer',
-            'marriage_type_id'   => 'required|exists:categories,id',
-            'notes'              => 'nullable|string|max:1000',
-        ]);
+        // ==================== DEBUG STAGE 3: VALIDATION ====================
+        try {
+            Log::info('STAGE 3 - STARTING VALIDATION');
+            
+            $validated = $request->validate([
+                'pdf_page_id'        => 'required|exists:pdf_pages,id',
+                'pdf_id'             => 'required|exists:pdf_uploads,id',
+                'certificate_serial' => 'required|string|max:255', 
+                'marriage_date'      => 'required|date',
+                'reg_date'           => 'required|date',
+                'venue'              => 'required|string|max:255',
+                'sub_county'         => 'required|string|max:255',
+                'ward_id'            => 'nullable|exists:counties,id',
+                'county'             => 'required|string|max:255',
+                'year'               => 'required|integer',
+                'month'              => 'required|integer',
+                'marriage_type_id'   => 'required|exists:categories,id',
+                'notes'              => 'nullable|string|max:1000',
+            ]);
+            
+            Log::info('STAGE 3 - VALIDATION PASSED', [
+                'validated_keys' => array_keys($validated),
+                'ward_id_validated' => $validated['ward_id'] ?? 'NULL',
+                'ward_id_exists_in_validated' => isset($validated['ward_id']),
+                'certificate_serial_validated' => $validated['certificate_serial']
+            ]);
+
+            // ==================== DEBUG STAGE 4: WARD ID EXISTS CHECK ====================
+            if (isset($validated['ward_id']) && !empty($validated['ward_id'])) {
+                $wardExists = County::where('id', $validated['ward_id'])->exists();
+                Log::info('STAGE 4 - WARD ID VALIDATION:', [
+                    'ward_id' => $validated['ward_id'],
+                    'exists_in_counties_table' => $wardExists ? 'YES ✅' : 'NO ❌'
+                ]);
+                
+                if (!$wardExists) {
+                    // Get sample counties for debugging
+                    $sampleCounties = County::select('id', 'wards', 'constituency')
+                        ->whereNotNull('wards')
+                        ->limit(5)
+                        ->get()
+                        ->toArray();
+                    Log::info('STAGE 4 - SAMPLE VALID WARD IDs:', $sampleCounties);
+                }
+            } else {
+                Log::info('STAGE 4 - WARD ID NOT PROVIDED OR EMPTY');
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('❌ STAGE 3 - VALIDATION FAILED:', [
+                'errors' => $e->errors(),
+                'input' => $request->all()
+            ]);
+            
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        }
 
         DB::beginTransaction();
 
         try {
-            $page = PdfPage::with(['pdfUpload', 'marriage'])->lockForUpdate()->findOrFail($validated['pdf_page_id']);
+            // ==================== DEBUG STAGE 5: FIND PAGE ====================
+            $page = PdfPage::with(['pdfUpload'])->lockForUpdate()->findOrFail($validated['pdf_page_id']);
+            
+            Log::info('STAGE 5 - PAGE FOUND:', [
+                'page_id' => $page->id,
+                'pdf_upload_id' => $page->pdfUpload->id,
+                'year_from_page' => $page->pdfUpload->year,
+                'month_from_page' => $page->pdfUpload->month,
+                'marriage_type_id_from_page' => $page->pdfUpload->marriage_type_id,
+                'page_status' => $page->status,
+                'already_has_marriage' => $page->marriage ? 'YES' : 'NO'
+            ]);
 
             if ($page->marriage) {
+                Log::error('STAGE 5 - PAGE ALREADY HAS MARRIAGE:', ['marriage_id' => $page->marriage->id]);
                 return redirect()->back()->with('error', 'This PDF page is already linked to a marriage record.');
             }
 
-            $marriageStatusId = Category::where('type', 'marriage_status')
-                ->where('name', 'Completed')
-                ->value('id');
-
-            $verificationStatusId = Category::where('type', 'verification_status')
-                ->where('name', 'Unverified')
-                ->value('id');
-
-            if (!$marriageStatusId || !$verificationStatusId) {
-                Log::error('Category IDs not found', [
-                    'marriage_status_id' => $marriageStatusId,
-                    'verification_status_id' => $verificationStatusId,
-                ]);
-                
-                return redirect()->back()->with('error', 'Required status categories not found in database.');
-            }
-
-            $marriage = Marriage::create([
-                'certificate_serial'     => strtoupper($validated['certificate_serial']),
-                'marriage_date'          => $validated['marriage_date'],
-                'reg_date'               => $validated['reg_date'],
-                'venue'                  => strtoupper($validated['venue']),
-                'county'                 => strtoupper($validated['county']),
-                'sub_county'             => strtoupper($validated['sub_county']),
-                'pdf_page_id'            => $page->id,
-                'pdf_id'                 => $page->pdfUpload->id,
-                'year'                   => $validated['year'],
-                'month'                  => $validated['month'],
-                'marriage_type_id'       => $validated['marriage_type_id'],
-                'marriage_status_id'     => $marriageStatusId,
-                'verification_status_id' => $verificationStatusId,
-                'system_status'          => 'Pending',
-                'created_by'             => $user->id,
-                'updated_by'             => $user->id,
+            // ==================== DEBUG STAGE 6: PRE-SERVICE DATA ====================
+            Log::info('STAGE 6 - DATA BEING PASSED TO SERVICE:', [
+                'pdf_page_id' => $validated['pdf_page_id'],
+                'pdf_id' => $validated['pdf_id'],
+                'certificate_serial' => $validated['certificate_serial'],
+                'marriage_date' => $validated['marriage_date'],
+                'reg_date' => $validated['reg_date'],
+                'venue' => $validated['venue'],
+                'sub_county' => $validated['sub_county'],
+                'ward_id' => $validated['ward_id'] ?? 'NULL',
+                'county' => $validated['county'],
+                'year' => $validated['year'],
+                'month' => $validated['month'],
+                'marriage_type_id' => $validated['marriage_type_id'],
+                'notes' => $validated['notes'] ?? 'NULL',
+                'user_id' => $user->id
             ]);
 
-            $page->update([
-                'status'        => 'completed',
-                'completed_by' => $user->id,
-                'completed_at'  => now(),
-                'notes'         => $validated['notes'] ?? null,
+            // ==================== DEBUG STAGE 7: CALL SERVICE ====================
+            Log::info('STAGE 7 - CALLING createQuickEntry');
+            $marriage = $this->marriageService->createQuickEntry($validated, $page, $user);
+
+            // ==================== DEBUG STAGE 8: VERIFY SAVED DATA ====================
+            // Refresh from database to get actual saved values
+            $freshMarriage = Marriage::with(['spouses', 'county'])
+                ->find($marriage->id);
+            
+            Log::info('✅ STAGE 8 - MARRIAGE SAVED SUCCESSFULLY:', [
+                'marriage_id' => $freshMarriage->id,
+                'certificate_serial' => $freshMarriage->certificate_serial,
+                'ward_id_saved' => $freshMarriage->ward_id,
+                'ward_id_is_null' => is_null($freshMarriage->ward_id) ? 'YES' : 'NO',
+                'ward_id_value' => $freshMarriage->ward_id,
+                'county_saved' => $freshMarriage->county,
+                'sub_county_saved' => $freshMarriage->sub_county,
+                'marriage_date' => $freshMarriage->marriage_date,
+                'reg_date' => $freshMarriage->reg_date,
+                'venue' => $freshMarriage->venue,
+                'pdf_page_id' => $freshMarriage->pdf_page_id,
+                'pdf_id' => $freshMarriage->pdf_id,
+                'year_saved' => $freshMarriage->year,
+                'month_saved' => $freshMarriage->month,
+                'marriage_type_id' => $freshMarriage->marriage_type_id,
+                'marriage_status_id' => $freshMarriage->marriage_status_id,
+                'verification_status_id' => $freshMarriage->verification_status_id,
+                'system_status' => $freshMarriage->system_status,
+                'created_by' => $freshMarriage->created_by,
+                'created_at' => $freshMarriage->created_at,
+                'all_fillable_fields' => $freshMarriage->only($freshMarriage->getFillable())
             ]);
+
+            // ==================== DEBUG STAGE 9: CHECK ALL DATABASE FIELDS ====================
+            $dbRecord = DB::table('marriages')->where('id', $freshMarriage->id)->first();
+            Log::info('STAGE 9 - RAW DATABASE RECORD:', (array) $dbRecord);
 
             DB::commit();
 
-            Log::info('Marriage created successfully', [
-                'marriage_id' => $marriage->id,
-                'user_id' => $user->id,
-            ]);
+            Log::info('========== 🔍 QUICK CREATE DEBUG END ==========');
 
             return redirect()->route('pdf-uploads.show', $page->id)
                 ->with('success', 'Marriage record created and linked successfully.');
@@ -1397,10 +2118,84 @@ class PdfUploadController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             
-            Log::error('QuickCreateMarriage failed', [
+            Log::error('❌ STAGE 8 - EXCEPTION CAUGHT:', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Failed to create marriage record: ' . $e->getMessage());
+        }
+    }
+
+    public function fullCreateFromPage(Request $request)
+    {
+        $user = Auth::user();
+        
+        if (!in_array($user->role->name, ['data_clerk','marriage_teller', 'admin', 'marriage_registrar'])) {
+            return back()->with('error', 'Unauthorized action.');
+        }
+
+        // Check if validation should be bypassed
+        $skipValidation = $request->input('skip_validation', false);
+        
+        // Only validate if not skipping validation
+        if (!$skipValidation) {
+            $validated = $request->validate([
+                'certificate_serial' => 'required|string|max:255',
+                'venue' => 'required|string|max:255',
+                'marriage_date' => 'required|date',
+                'sub_county' => 'required|string|max:255',
+                'ward_id' => 'required|exists:counties,id',
+                'husband_name' => 'required|string|max:255',
+                'husband_age' => 'required|integer|min:18|max:120',
+                'wife_name' => 'required|string|max:255',
+                'wife_age' => 'required|integer|min:18|max:120',
+                'witness1_name' => 'required|string|max:255',
+                'witness2_name' => 'required|string|max:255',
+                'pdf_page_id' => 'required|exists:pdf_pages,id',
+                'pdf_id' => 'required|exists:pdf_uploads,id',
+                'marriage_type_id' => 'required|exists:categories,id',
+            ]);
+        } else {
+            // When skipping validation, only validate existence of required relationships
+            $validated = $request->validate([
+                'pdf_page_id' => 'required|exists:pdf_pages,id',
+                'pdf_id' => 'required|exists:pdf_uploads,id',
+                'marriage_type_id' => 'required|exists:categories,id',
+            ]);
+        }
+
+        try {
+            DB::beginTransaction();
+            
+            $page = PdfPage::with(['pdfUpload'])->lockForUpdate()->findOrFail($request->pdf_page_id);
+            
+            if ($page->marriage) {
+                return redirect()->back()->with('error', 'This PDF page is already linked to a marriage record.');
+            }
+            
+            // Prepare data for service
+            $data = $request->all();
+            $data['skip_validation'] = $skipValidation;
+            
+            // Create marriage using service
+            $marriage = $this->marriageService->createFullEntry($data, $page, $user);
+            
+            DB::commit();
+            
+            return redirect()->route('pdf-uploads.show', $page->id)
+                ->with('success', $skipValidation ? 'Marriage record created with validation bypass. Status: Under Review' : 'Marriage record created successfully with full details.');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('FullCreateMarriage failed', [
                 'error' => $e->getMessage(),
-                'line'  => $e->getLine(),
-                'file'  => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
             
@@ -1442,27 +2237,27 @@ class PdfUploadController extends Controller
                 'updated_by' => $user->id,
             ]);
 
-            $husband = $marriage->spouses()->where('gender', 'male')->first();
+            $husband = $marriage->spouses()->where('spouse_type', 'husband')->first();
             if (!empty($validated['husband_name'])) {
                 if ($husband) {
                     $husband->update(['name' => strtoupper($validated['husband_name'])]);
                 } else {
                     $marriage->spouses()->create([
                         'name' => strtoupper($validated['husband_name']),
-                        'gender' => 'male',
+                        'spouse_type' => 'husband',
                         'created_by' => $user->id,
                     ]);
                 }
             }
 
-            $wife = $marriage->spouses()->where('gender', 'female')->first();
+            $wife = $marriage->spouses()->where('spouse_type', 'wife')->first();
             if (!empty($validated['wife_name'])) {
                 if ($wife) {
                     $wife->update(['name' => strtoupper($validated['wife_name'])]);
                 } else {
                     $marriage->spouses()->create([
                         'name' => strtoupper($validated['wife_name']),
-                        'gender' => 'female',
+                        'spouse_type' => 'wife',
                         'created_by' => $user->id,
                     ]);
                 }
@@ -1522,4 +2317,43 @@ class PdfUploadController extends Controller
             'page' => $page->fresh()
         ]);
     }
+
+    public function getWards(Request $request)
+    {
+        $constituency = $request->get('constituency');
+        $countyCode = $request->get('county_code');
+        
+        if (!$constituency || !$countyCode) {
+            return response()->json([]);
+        }
+        
+        $wards = County::where('county_code', $countyCode)
+            ->where('constituency', $constituency)
+            ->whereNotNull('wards')
+            ->where('wards', '!=', '')
+            ->select('id', 'wards', 'constituency')
+            ->orderBy('wards')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->wards,  // Change 'wards' to 'name' for clarity
+                    'wards' => $item->wards,  // Keep both for compatibility
+                    'constituency' => $item->constituency
+                ];
+            })
+            ->toArray();
+        
+        return response()->json($wards);
+    }
+
+    public function getReligiousInstitutions(Request $request)
+    {
+        $marriageTypeId = $request->get('marriage_type_id');
+        $countyCode = $request->get('county_code');
+        
+        return response()->json([]);
+    }
+
+
 }

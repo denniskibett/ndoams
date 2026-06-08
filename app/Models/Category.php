@@ -38,5 +38,10 @@ class Category extends Model
     {
         return $this->belongsTo(User::class, 'verified_by');
     }  
+
+    public function pdfUploads(): HasMany
+    {
+        return $this->hasMany(PdfUpload::class, 'marriage_type_id');
+    }
      
 }

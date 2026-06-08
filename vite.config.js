@@ -9,14 +9,20 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/index.js',
                 'resources/js/bootstrap.js',
-                'resources/js/components/calendar-init.js',
-                'resources/js/components/image-resize.js',
-                'resources/js/components/map-01.js',
-                'resources/js/components/charts/chart-01.js',
-                'resources/js/components/charts/chart-02.js',
-                'resources/js/components/charts/chart-03.js'
             ],
             refresh: true,
         }),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    apexcharts: ['apexcharts'],
+                    alpine: ['alpinejs', '@alpinejs/persist'],
+                    flatpickr: ['flatpickr'],
+                    dropzone: ['dropzone'],
+                },
+            },
+        },
+    },
 });

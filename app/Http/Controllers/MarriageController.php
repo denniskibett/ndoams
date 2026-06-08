@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Category;
 use App\Models\Image;
 use App\Models\PdfUpload;
+use App\Models\PdfPage;
 use App\Models\County;
 use App\Models\ClerkManagement;
 use App\Models\MarriageTypeExtension;
@@ -19,10 +20,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Helpers\SystemHelper;
+use Illuminate\Support\Facades\Log;
 
 class MarriageController extends Controller
 {
-
     public function index()
     {
         $user = Auth::user();
@@ -38,64 +40,35 @@ class MarriageController extends Controller
         // Get marriages based on role
         $marriages = $this->getMarriagesForRole($role, $user);
         
-        // Get unlinked images for marriage tellers
-        $unlinkedImages = null;
-        $unlinkedPdfPages = null;
-        $unlinkedPdfs = null;
+        // Get categories
+        $categories = Category::whereIn('type', [
+            'marriage_type', 
+            'marriage_status', 
+            'verification_status', 
+            'id_type'
+        ])->get();
         
-        if ($role === 'marriage_teller') {
-            $unlinkedImages = Image::whereDoesntHave('marriage')
-                                ->whereHas('uploader.role', function($query) {
-                                    $query->where('name', 'data_clerk');
-                                })
-                                ->with('uploader.role')
-                                ->latest()
-                                ->get();
-            
-            // Get unlinked PDF pages (pages without marriage records)
-            // IMPORTANT: Check both pdf_id AND pdf_page_id are null
-            $unlinkedPdfPages = \App\Models\PdfPage::whereDoesntHave('marriage', function($query) {
-                                    $query->whereNotNull('pdf_page_id');
-                                })
-                                ->whereHas('pdfUpload.uploader.role', function($query) {
-                                    $query->where('name', 'data_clerk');
-                                })
-                                ->with([
-                                    'pdfUpload' => function($query) {
-                                        $query->with(['uploader.role', 'county']);
-                                    },
-                                    'assignedUser'
-                                ])
-                                ->latest()
-                                ->get();
-            
-            // Get unlinked PDFs (entire PDFs that don't have any marriage linked via pdf_id)
-            // This is for legacy compatibility
-            $unlinkedPdfs = PdfUpload::whereDoesntHave('marriages', function($query) {
-                                    $query->whereNotNull('pdf_id');
-                                })
-                                ->whereHas('uploader.role', function($query) {
-                                    $query->where('name', 'data_clerk');
-                                })
-                                ->with('uploader.role')
-                                ->latest()
-                                ->get();
-        }
+        // Get counties, constituencies, wards
+        $counties = County::distinct()->pluck('name')->toArray();
+        $constituencies = County::distinct()->pluck('constituency')->filter()->values()->toArray();
+        $wards = County::distinct()->pluck('wards')->filter()->values()->toArray();
         
         // Get role-specific stats
         $stats = $this->getRoleSpecificStats($role, $user);
+        $systemSettings = SystemHelper::settings();
 
+        
         return view('marriages.index', compact(
             'marriages', 
             'stats', 
-            'unlinkedImages', 
-            'unlinkedPdfPages', 
-            'unlinkedPdfs'
+            'categories',
+            'counties',
+            'constituencies',
+            'wards',
+            'systemSettings'
         ));
     }
-
-        
-
+  
     private function getMarriagesForRole($role, $user)
     {
         switch ($role) {
@@ -139,6 +112,7 @@ class MarriageController extends Controller
         }
     }
 
+    
     private function getRoleSpecificStats($role, $user)
     {
         switch ($role) {
@@ -873,50 +847,56 @@ class MarriageController extends Controller
         $marriageId = $request->get('marriage_id');
         
         if ($isUpdate && $marriageId) {
-            // Update existing marriage
             return $this->updateMarriageFromPdf($request, $pdfId, $marriageId);
         }
 
-        // Validate the request with all new fields
+        // Validate the request with ALL required fields
         $validated = $request->validate([
             'certificate_serial' => 'required|string|max:255|unique:marriages,certificate_serial',
+            'license_no' => 'nullable|string|max:255',  // ADDED
             'marriage_date' => 'required|date',
             'venue' => 'required|string|max:255',
             'county' => 'required|string|max:255',
-            'sub_county' => 'nullable|string|max:255',
+            'sub_county' => 'required|string|max:255',  // CHANGED to required
+            'ward_id' => 'nullable|exists:counties,id',  // ADDED
             'reg_date' => 'nullable|date',
             'marriage_type_id' => 'required|exists:categories,id',
             'marriage_status_id' => 'nullable|exists:categories,id', 
             'year' => 'nullable|integer|min:2000|max:2030',
             'month' => 'nullable|integer|min:1|max:12',
             
-            // Spouse fields with age
+            // Spouse fields with age and marital status
             'husband_name' => 'required|string|max:255',
             'husband_age' => 'nullable|integer|min:18|max:120',
+            'husband_marital_status' => 'nullable|string|max:255',  // ADDED
             'husband_father_name' => 'nullable|string|max:255',
             'husband_father_occupation' => 'nullable|string|max:255',
             'husband_father_residence' => 'nullable|string|max:500',
+            'husband_father_deceased' => 'nullable|boolean',  // ADDED
             'husband_mother_name' => 'nullable|string|max:255',
             'husband_mother_occupation' => 'nullable|string|max:255',
             'husband_mother_residence' => 'nullable|string|max:500',
+            'husband_mother_deceased' => 'nullable|boolean',  // ADDED
             'husband_occupation' => 'nullable|string|max:255',
             'husband_residence' => 'nullable|string|max:500',
             
             'wife_name' => 'required|string|max:255',
             'wife_age' => 'nullable|integer|min:18|max:120',
+            'wife_marital_status' => 'nullable|string|max:255',  // ADDED
             'wife_father_name' => 'nullable|string|max:255',
             'wife_father_occupation' => 'nullable|string|max:255',
             'wife_father_residence' => 'nullable|string|max:500',
+            'wife_father_deceased' => 'nullable|boolean',  // ADDED
             'wife_mother_name' => 'nullable|string|max:255',
             'wife_mother_occupation' => 'nullable|string|max:255',
             'wife_mother_residence' => 'nullable|string|max:500',
+            'wife_mother_deceased' => 'nullable|boolean',  // ADDED
             'wife_occupation' => 'nullable|string|max:255',
             'wife_residence' => 'nullable|string|max:500',
             
             // Witness fields with side selection
             'witness1_name' => 'required|string|max:255',
             'witness1_side' => 'nullable|in:husband,wife,both', 
-            
             'witness2_name' => 'required|string|max:255',
             'witness2_side' => 'nullable|in:husband,wife,both',
             
@@ -931,6 +911,7 @@ class MarriageController extends Controller
             'entry_no' => 'nullable|string',
             'temple' => 'nullable|string',
             'dowry' => 'nullable|string',
+            'registrar_officer' => 'nullable|string',  // ADDED
         ]);
 
         try {
@@ -948,21 +929,13 @@ class MarriageController extends Controller
             $countyRecord = County::where('name', $validated['county'])->first();
             $countyId = $countyRecord ? $countyRecord->id : null;
 
-            // Get sub_county ID (constituency)
-            $subCountyId = null;
-            if (!empty($validated['sub_county'])) {
-                $subCountyRecord = County::where('constituency', $validated['sub_county'])
-                    ->where('name', $validated['county'])
-                    ->first();
-                $subCountyId = $subCountyRecord ? $subCountyRecord->id : null;
-            }
-
             // Convert all string fields to uppercase
             $uppercasedData = collect($validated)->map(function ($item, $key) {
                 // Don't uppercase date fields, numbers, IDs, or select options
                 if (in_array($key, ['marriage_date', 'reg_date', 'year', 'month', 'husband_age', 'wife_age', 
                                 'marriage_type_id', 'marriage_status_id', 'verification_status_id',
-                                'witness1_side', 'witness2_side']) || 
+                                'witness1_side', 'witness2_side', 'husband_father_deceased', 'wife_father_deceased',
+                                'husband_mother_deceased', 'wife_mother_deceased']) || 
                     is_numeric($item) || 
                     str_ends_with($key, '_id')) {
                     return $item;
@@ -973,12 +946,13 @@ class MarriageController extends Controller
             // Create the marriage record with pdf_id
             $marriage = Marriage::create([
                 'certificate_serial' => $uppercasedData['certificate_serial'],
+                'license_no' => $uppercasedData['license_no'] ?? null,  // ADDED
                 'marriage_date' => $uppercasedData['marriage_date'],
                 'venue' => $uppercasedData['venue'],
                 'county' => $uppercasedData['county'],
                 'county_id' => $countyId, 
                 'sub_county' => $uppercasedData['sub_county'] ?? null,
-                'sub_county_id' => $subCountyId,
+                'ward_id' => $uppercasedData['ward_id'] ?? null,  // ADDED
                 'reg_date' => $uppercasedData['reg_date'] ?? null,
                 'marriage_type_id' => $uppercasedData['marriage_type_id'],
                 'marriage_status_id' => $uppercasedData['marriage_status_id'] ?? null,
@@ -993,11 +967,16 @@ class MarriageController extends Controller
                 'system_status' => 'Pending',
             ]);
 
+            // Map marital status values
+            $husbandMaritalStatus = $this->mapMaritalStatus($uppercasedData['husband_marital_status'] ?? null, 'husband');
+            $wifeMaritalStatus = $this->mapMaritalStatus($uppercasedData['wife_marital_status'] ?? null, 'wife');
+
             // Create husband
             $husband = $marriage->spouses()->create([
                 'name' => $uppercasedData['husband_name'],
-                'spouse_type' => 'husband', // Changed from 'gender' to 'spouse_type'
+                'spouse_type' => 'husband',
                 'age' => $uppercasedData['husband_age'] ?? null,
+                'marital_status' => $husbandMaritalStatus,  // ADDED
                 'father_name' => $uppercasedData['husband_father_name'] ?? null,
                 'father_occupation' => $uppercasedData['husband_father_occupation'] ?? null,
                 'father_residence' => $uppercasedData['husband_father_residence'] ?? null,
@@ -1015,8 +994,9 @@ class MarriageController extends Controller
             // Create wife
             $wife = $marriage->spouses()->create([
                 'name' => $uppercasedData['wife_name'],
-                'spouse_type' => 'wife', // Changed from 'gender' to 'spouse_type'
+                'spouse_type' => 'wife',
                 'age' => $uppercasedData['wife_age'] ?? null,
+                'marital_status' => $wifeMaritalStatus,  // ADDED
                 'father_name' => $uppercasedData['wife_father_name'] ?? null,
                 'father_occupation' => $uppercasedData['wife_father_occupation'] ?? null,
                 'father_residence' => $uppercasedData['wife_father_residence'] ?? null,
@@ -1034,7 +1014,7 @@ class MarriageController extends Controller
             // Create witnesses
             $marriage->witnesses()->create([
                 'name' => $uppercasedData['witness1_name'],
-                'spouse_side' => $uppercasedData['witness1_side'] ?? null, // Changed from 'side' to 'spouse_side'
+                'spouse_side' => $uppercasedData['witness1_side'] ?? null,
                 'created_by' => $user->id,
                 'verified_by' => $user->id,
                 'updated_by' => $user->id,
@@ -1042,44 +1022,85 @@ class MarriageController extends Controller
 
             $marriage->witnesses()->create([
                 'name' => $uppercasedData['witness2_name'],
-                'spouse_side' => $uppercasedData['witness2_side'] ?? null, // Changed from 'side' to 'spouse_side'
+                'spouse_side' => $uppercasedData['witness2_side'] ?? null,
                 'created_by' => $user->id,
                 'verified_by' => $user->id,
                 'updated_by' => $user->id,
             ]);
 
             // Create marriage type extension if there are any extension fields
-            $hasExtensionData = collect([
-                'mahr_agreed', 'mahr_paid', 'mahr_deferred', 'gifts', 'muslim_officer',
-                'church_org', 'pastor_name', 'entry_no', 'temple', 'dowry'
-            ])->contains(function ($field) use ($uppercasedData) {
-                return !empty($uppercasedData[$field]);
-            });
+            $extensionData = [];
+            $hasExtensionData = false;
+            
+            // Check based on marriage type
+            $marriageType = Category::find($validated['marriage_type_id']);
+            $marriageTypeName = $marriageType ? $marriageType->name : '';
+            
+            switch ($marriageTypeName) {
+                case 'Muslim':
+                    if (!empty($uppercasedData['muslim_officer'])) {
+                        $extensionData['muslim_officer'] = $uppercasedData['muslim_officer'];
+                        $hasExtensionData = true;
+                    }
+                    $extensionFields = ['mahr_agreed', 'mahr_paid', 'mahr_deferred', 'gifts'];
+                    foreach ($extensionFields as $field) {
+                        if (!empty($uppercasedData[$field])) {
+                            $extensionData[$field] = $uppercasedData[$field];
+                            $hasExtensionData = true;
+                        }
+                    }
+                    break;
+                    
+                case 'Christian':
+                    if (!empty($uppercasedData['pastor_name'])) {
+                        $extensionData['pastor_name'] = $uppercasedData['pastor_name'];
+                        $hasExtensionData = true;
+                    }
+                    if (!empty($uppercasedData['church_org'])) {
+                        $extensionData['church_org'] = $uppercasedData['church_org'];
+                        $hasExtensionData = true;
+                    }
+                    if (!empty($uppercasedData['entry_no'])) {
+                        $extensionData['entry_no'] = $uppercasedData['entry_no'];
+                        $hasExtensionData = true;
+                    }
+                    break;
+                    
+                case 'Hindu':
+                    if (!empty($uppercasedData['registrar_officer'])) {
+                        $extensionData['registrar_officer'] = $uppercasedData['registrar_officer'];
+                        $hasExtensionData = true;
+                    }
+                    if (!empty($uppercasedData['temple'])) {
+                        $extensionData['temple'] = $uppercasedData['temple'];
+                        $hasExtensionData = true;
+                    }
+                    if (!empty($uppercasedData['dowry'])) {
+                        $extensionData['dowry'] = $uppercasedData['dowry'];
+                        $hasExtensionData = true;
+                    }
+                    break;
+                    
+                case 'Civil':
+                default:
+                    if (!empty($uppercasedData['registrar_officer'])) {
+                        $extensionData['registrar_officer'] = $uppercasedData['registrar_officer'];
+                        $hasExtensionData = true;
+                    }
+                    if (!empty($uppercasedData['entry_no'])) {
+                        $extensionData['entry_no'] = $uppercasedData['entry_no'];
+                        $hasExtensionData = true;
+                    }
+                    break;
+            }
 
             if ($hasExtensionData) {
-                MarriageTypeExtension::create([
-                    'marriage_id' => $marriage->id,
-                    'mahr_agreed' => $uppercasedData['mahr_agreed'] ?? null,
-                    'mahr_paid' => $uppercasedData['mahr_paid'] ?? null,
-                    'mahr_deferred' => $uppercasedData['mahr_deferred'] ?? null,
-                    'gifts' => $uppercasedData['gifts'] ?? null,
-                    'muslim_officer' => $uppercasedData['muslim_officer'] ?? null,
-                    'church_org' => $uppercasedData['church_org'] ?? null,
-                    'pastor_name' => $uppercasedData['pastor_name'] ?? null,
-                    'entry_no' => $uppercasedData['entry_no'] ?? null,
-                    'temple' => $uppercasedData['temple'] ?? null,
-                    'dowry' => $uppercasedData['dowry'] ?? null,
-                    'created_by' => $user->id,
-                ]);
+                $extensionData['marriage_id'] = $marriage->id;
+                $extensionData['created_by'] = $user->id;
+                MarriageTypeExtension::create($extensionData);
             }
 
             DB::commit();
-
-            // Debug: Check what was saved
-            \Log::info('Marriage created with ID: ' . $marriage->id);
-            \Log::info('Husband saved: ' . ($husband ? 'Yes' : 'No'));
-            \Log::info('Wife saved: ' . ($wife ? 'Yes' : 'No'));
-            \Log::info('Witnesses saved: ' . $marriage->witnesses()->count());
 
             return redirect()->route('marriages.show', $marriage)
                             ->with('success', 'Marriage record created successfully from PDF!')
@@ -1087,17 +1108,48 @@ class MarriageController extends Controller
                                 'Marriage Created: ' . $marriage->certificate_serial,
                                 'Husband: ' . $uppercasedData['husband_name'],
                                 'Wife: ' . $uppercasedData['wife_name'],
-                                'Witnesses: ' . $uppercasedData['witness1_name'] . ', ' . $uppercasedData['witness2_name']
+                                'Witnesses: ' . $uppercasedData['witness1_name'] . ', ' . $uppercasedData['witness2_name'],
+                                'Registrar: ' . $uppercasedData['registrar_officer'], 
                             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error in storeFromPdf: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
+
+            Log::error('Error in storeFromPdf: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             
             return back()->with('error', 'Failed to create marriage record: ' . $e->getMessage())
                         ->withInput();
         }
+    }
+
+    private function mapMaritalStatus($status, $spouseType = 'husband')
+    {
+        $mapping = [
+            'Bachelor' => 'Bachelor',
+            'Spinster' => 'Spinster',
+            'Married' => 'Married',
+            'Widowed' => 'Widowed',
+            'Divorced' => 'Divorced',
+            'single' => $spouseType === 'husband' ? 'Bachelor' : 'Spinster',
+            'married' => 'Married',
+            'divorced' => 'Divorced',
+            'widowed' => 'Widowed',
+        ];
+        
+        $mapped = $mapping[$status] ?? null;
+        
+        // For husband, if mapped is Spinster, change to Bachelor
+        if ($spouseType === 'husband' && $mapped === 'Spinster') {
+            $mapped = 'Bachelor';
+        }
+        
+        // For wife, if mapped is Bachelor, change to Spinster
+        if ($spouseType === 'wife' && $mapped === 'Bachelor') {
+            $mapped = 'Spinster';
+        }
+        
+        return $mapped;
     }
 
     private function updateMarriageFromPdf(Request $request, $pdfId, $marriageId)
@@ -1115,7 +1167,7 @@ class MarriageController extends Controller
 
         // Validate the request
         $validated = $request->validate([
-            'certificate_serial' => 'required|string|max:255|unique:marriages,certificate_serial,' . $marriageId,
+            'certificate_serial' => 'required|string|max:255' . $marriageId,
             'marriage_date' => 'required|date',
             'venue' => 'required|string|max:255',
             'county' => 'required|string|max:255',
@@ -1605,18 +1657,20 @@ class MarriageController extends Controller
         // Load categories
         $categories = Category::whereIn('type', ['marriage_type', 'marriage_status', 'verification_status', 'id_type'])
                             ->get();
+        $stats = $this->getRoleSpecificStats($role, $user);
+
 
         // Show marriage page based on role
-        return $this->showMarriageForRole($marriage, $categories, $role, $user);
+        return $this->showMarriageForRole($marriage, $categories, $role, $user, $stats);
     }
 
     public function edit(Marriage $marriage)
     {
         $user = Auth::user();
         
-        if (!$this->canEditMarriage($marriage, $user)) {
-            abort(403, 'You do not have permission to edit this marriage record.');
-        }
+        // if (!$this->canEditMarriage($marriage, $user)) {
+        //     abort(403, 'You do not have permission to edit this marriage record.');
+        // }
 
         $categories = Category::whereIn('type', ['marriage_type', 'marriage_status', 'verification_status', 'id_type'])
                             ->get();
@@ -1624,67 +1678,656 @@ class MarriageController extends Controller
         return view('marriages.edit', compact('marriage', 'categories'));
     }
 
-    public function update(Request $request, Marriage $marriage)
-    {
-        $user = Auth::user();
-        
-        if (!$this->canEditMarriage($marriage, $user)) {
-            abort(403, 'You do not have permission to edit this marriage record.');
-        }
+public function update(Request $request, Marriage $marriage)
+{
+    $user = Auth::user();
+    
+    // if (!$this->canEditMarriage($marriage, $user)) {
+    //     abort(403, 'You do not have permission to edit this marriage record.');
+    // }
 
-        // Get verification status category IDs
-        $verificationStatuses = Category::where('type', 'verification_status')
-            ->whereIn('name', ['Verified', 'Rejected', 'Unverified'])
-            ->pluck('id', 'name');
-
-        $validated = $request->validate([
-            'certificate_serial' => 'required|string|max:255|unique:marriages,certificate_serial,' . $marriage->id,
-            'marriage_date' => 'required|date',
-            'venue' => 'required|string|max:255',
-            'county' => 'required|string|max:255',
-            'marriage_type_id' => 'required|exists:categories,id',
-            // Add other validation rules as needed
-            'verification_status' => 'nullable|in:Verified,Rejected,Unverified',
-            'verification_notes' => 'nullable|string|max:500',
-            'system_status' => 'nullable|in:Pending,Completed',
-        ]);
-
-        $data = [
-            'certificate_serial' => $validated['certificate_serial'],
-            'marriage_date' => $validated['marriage_date'],
-            'venue' => $validated['venue'],
-            'county' => $validated['county'],
-            'marriage_type_id' => $validated['marriage_type_id'],
-            'updated_by' => $user->id,
-        ];
-
-        // Handle registrar/admin specific fields
-        if (in_array($user->role->name, ['marriage_registrar', 'admin'])) {
-            if ($request->has('verification_status')) {
-                $statusName = $validated['verification_status'];
-                if (isset($verificationStatuses[$statusName])) {
-                    $data['verification_status_id'] = $verificationStatuses[$statusName];
-                    $data['verified_by'] = $user->id;
-                }
-            }
-            if ($request->has('verification_notes')) {
-                $data['verification_notes'] = $validated['verification_notes'];
-            }
-            if ($request->has('system_status')) {
-                $data['system_status'] = $validated['system_status'];
-            }
-        }
-
-        // Marriage teller can only mark as completed
-        if ($user->role->name === 'marriage_teller' && $marriage->system_status === 'Pending' && $request->has('mark_completed')) {
-            $data['system_status'] = 'Completed';
-        }
-
-        $marriage->update($data);
-        
-        return redirect()->route('marriages.show', $marriage)
-            ->with('success', 'Marriage record updated successfully.');
+    // Check if validation should be bypassed
+    $skipValidation = $request->input('skip_validation', false);
+    $action = $request->input('action'); // 'approve_completed' or 'reject_to_clerk'
+    
+    // Handle the action buttons (Approve & Complete / Reject to Clerk)
+    if ($action === 'approve_completed') {
+        return $this->approveMarriage($request, $marriage);
+    } elseif ($action === 'reject_to_clerk') {
+        return $this->rejectMarriage($request, $marriage);
     }
+    
+    // Get marriage type name to determine which officer field to use
+    $marriageTypeName = $marriage->marriageType->name ?? '';
+    
+    // If skip_validation is true, bypass all validation rules
+    if ($skipValidation) {
+        // Update the marriage record with whatever data was provided (no validation)
+        $updateData = [];
+        
+        if ($request->has('certificate_serial')) {
+            $updateData['certificate_serial'] = strtoupper($request->certificate_serial);
+        }
+        if ($request->has('marriage_date')) {
+            $updateData['marriage_date'] = $request->marriage_date;
+        }
+        if ($request->has('reg_date')) {
+            $updateData['reg_date'] = $request->reg_date;
+        }
+        if ($request->has('venue')) {
+            $updateData['venue'] = strtoupper($request->venue);
+        }
+        if ($request->has('license_no')) {
+            $updateData['license_no'] = strtoupper($request->license_no);
+        }
+        if ($request->has('sub_county')) {
+            $updateData['sub_county'] = strtoupper($request->sub_county);
+        }
+        if ($request->has('ward_id')) {
+            $updateData['ward_id'] = $request->ward_id;
+        }
+        
+        // Set has_errors to true and system_status to Under Review
+        $updateData['has_errors'] = true;
+        $updateData['system_status'] = 'Under Review';
+        $updateData['updated_by'] = $user->id;
+        
+        if (!empty($updateData)) {
+            $marriage->update($updateData);
+        }
+        
+        // Update spouses if provided
+        if ($request->has('husband_name')) {
+            $husband = $marriage->spouses()->where('spouse_type', 'husband')->first();
+            if ($husband) {
+                $husbandData = [];
+                if ($request->has('husband_name')) $husbandData['name'] = strtoupper($request->husband_name);
+                if ($request->has('husband_age')) $husbandData['age'] = $request->husband_age;
+                if ($request->has('husband_occupation')) $husbandData['occupation'] = strtoupper($request->husband_occupation);
+                if ($request->has('husband_residence')) $husbandData['residence'] = strtoupper($request->husband_residence);
+                if ($request->has('husband_marital_status')) $husbandData['marital_status'] = $request->husband_marital_status;
+                if ($request->has('husband_father_name')) $husbandData['father_name'] = strtoupper($request->husband_father_name);
+                if ($request->has('husband_father_occupation')) $husbandData['father_occupation'] = strtoupper($request->husband_father_occupation);
+                if ($request->has('husband_father_residence')) $husbandData['father_residence'] = strtoupper($request->husband_father_residence);
+                if ($request->has('husband_mother_name')) $husbandData['mother_name'] = strtoupper($request->husband_mother_name);
+                if ($request->has('husband_mother_occupation')) $husbandData['mother_occupation'] = strtoupper($request->husband_mother_occupation);
+                if ($request->has('husband_mother_residence')) $husbandData['mother_residence'] = strtoupper($request->husband_mother_residence);
+                $husband->update($husbandData);
+            }
+        }
+        
+        if ($request->has('wife_name')) {
+            $wife = $marriage->spouses()->where('spouse_type', 'wife')->first();
+            if ($wife) {
+                $wifeData = [];
+                if ($request->has('wife_name')) $wifeData['name'] = strtoupper($request->wife_name);
+                if ($request->has('wife_age')) $wifeData['age'] = $request->wife_age;
+                if ($request->has('wife_occupation')) $wifeData['occupation'] = strtoupper($request->wife_occupation);
+                if ($request->has('wife_residence')) $wifeData['residence'] = strtoupper($request->wife_residence);
+                if ($request->has('wife_marital_status')) $wifeData['marital_status'] = $request->wife_marital_status;
+                if ($request->has('wife_father_name')) $wifeData['father_name'] = strtoupper($request->wife_father_name);
+                if ($request->has('wife_father_occupation')) $wifeData['father_occupation'] = strtoupper($request->wife_father_occupation);
+                if ($request->has('wife_father_residence')) $wifeData['father_residence'] = strtoupper($request->wife_father_residence);
+                if ($request->has('wife_mother_name')) $wifeData['mother_name'] = strtoupper($request->wife_mother_name);
+                if ($request->has('wife_mother_occupation')) $wifeData['mother_occupation'] = strtoupper($request->wife_mother_occupation);
+                if ($request->has('wife_mother_residence')) $wifeData['mother_residence'] = strtoupper($request->wife_mother_residence);
+                $wife->update($wifeData);
+            }
+        }
+        
+        // Update witnesses if provided
+        if ($request->has('witness1_name')) {
+            $witnesses = $marriage->witnesses()->get();
+            if ($witnesses->count() > 0) {
+                $witnesses[0]->update([
+                    'name' => strtoupper($request->witness1_name),
+                    'spouse_side' => $request->witness1_side ?? null,
+                ]);
+            } elseif ($request->witness1_name) {
+                $marriage->witnesses()->create([
+                    'name' => strtoupper($request->witness1_name),
+                    'spouse_side' => $request->witness1_side ?? null,
+                    'created_by' => $user->id,
+                ]);
+            }
+        }
+        
+        if ($request->has('witness2_name')) {
+            $witnesses = $marriage->witnesses()->get();
+            if ($witnesses->count() > 1) {
+                $witnesses[1]->update([
+                    'name' => strtoupper($request->witness2_name),
+                    'spouse_side' => $request->witness2_side ?? null,
+                ]);
+            } elseif ($request->witness2_name) {
+                $marriage->witnesses()->create([
+                    'name' => strtoupper($request->witness2_name),
+                    'spouse_side' => $request->witness2_side ?? null,
+                    'created_by' => $user->id,
+                ]);
+            }
+        }
+        
+        // Update PDF page notes if provided
+        if ($request->has('page_notes') && $request->has('pdf_page_id')) {
+            \App\Models\PdfPage::where('id', $request->pdf_page_id)->update([
+                'notes' => $request->page_notes
+            ]);
+        }
+        
+        // Update entry_no and officer in marriage extension
+        $extensionData = [];
+        if ($request->has('entry_no')) {
+            $extensionData['entry_no'] = $request->entry_no;
+        }
+        
+        // Handle officer based on marriage type
+        if ($request->has('officer_name')) {
+            switch ($marriageTypeName) {
+                case 'Muslim':
+                    $extensionData['muslim_officer'] = strtoupper($request->officer_name);
+                    break;
+                case 'Christian':
+                    $extensionData['pastor_name'] = strtoupper($request->officer_name);
+                    break;
+                case 'Hindu':
+                    $extensionData['registrar_officer'] = strtoupper($request->officer_name);
+                    break;
+                case 'Civil':
+                default:
+                    $extensionData['registrar_officer'] = strtoupper($request->officer_name);
+                    break;
+            }
+        }
+        
+        if (!empty($extensionData)) {
+            $extension = $marriage->marriageExtension;
+            if ($extension) {
+                $extension->update($extensionData);
+            } else {
+                $extensionData['marriage_id'] = $marriage->id;
+                $extensionData['created_by'] = $user->id;
+                \App\Models\MarriageTypeExtension::create($extensionData);
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Record saved with validation bypass. Status: Under Review',
+            'has_errors' => true,
+            'system_status' => 'Under Review'
+        ]);
+    }
+    
+    // Normal validation flow - continue with existing validation
+    $validated = $request->validate([
+        'certificate_serial' => 'required|string|max:255' . $marriage->id,
+        'marriage_date' => 'required|date',
+        'venue' => 'required|string|max:255',
+        'county' => 'nullable|string|max:255',
+        'marriage_type_id' => 'required|exists:categories,id',
+        'verification_status' => 'nullable|in:Verified,Rejected,Unverified',
+        'verification_notes' => 'nullable|string|max:500',
+        'system_status' => 'nullable|in:Pending,Completed,Skipped,In Progress,Under Review',
+        'mark_completed' => 'nullable|boolean',
+        'mark_skipped' => 'nullable|boolean',
+    ]);
+
+    $data = [
+        'certificate_serial' => $validated['certificate_serial'],
+        'marriage_date' => $validated['marriage_date'],
+        'venue' => $validated['venue'],
+        'marriage_type_id' => $validated['marriage_type_id'],
+        'updated_by' => $user->id,
+    ];
+    
+    // Only add county if provided (it comes from hidden field)
+    if ($request->has('county') && !empty($request->county)) {
+        $data['county'] = $request->county;
+    }
+    
+    // Add optional fields
+    if ($request->has('reg_date')) {
+        $data['reg_date'] = $request->reg_date;
+    }
+    if ($request->has('license_no')) {
+        $data['license_no'] = strtoupper($request->license_no);
+    }
+    if ($request->has('sub_county')) {
+        $data['sub_county'] = strtoupper($request->sub_county);
+    }
+    if ($request->has('ward_id')) {
+        $data['ward_id'] = $request->ward_id;
+    }
+    if ($request->has('notes')) {
+        $data['notes'] = $request->notes;
+    }
+
+    // Handle the mark_completed button
+    if ($request->has('mark_completed') && $request->mark_completed == '1') {
+        $data['system_status'] = 'Completed';
+        $data['has_errors'] = false;
+        
+        // Update associated PDF page status if exists
+        if ($marriage->pdf_page_id) {
+            \App\Models\PdfPage::where('id', $marriage->pdf_page_id)->update(['status' => 'completed']);
+        }
+    }
+    
+    // Handle the mark_skipped button
+    if ($request->has('mark_skipped') && $request->mark_skipped == '1') {
+        $data['system_status'] = 'Skipped';
+        $data['has_errors'] = true;
+        
+        // Update associated PDF page status if exists
+        if ($marriage->pdf_page_id) {
+            \App\Models\PdfPage::where('id', $marriage->pdf_page_id)->update(['status' => 'processing']);
+        }
+    }
+
+    // Handle regular system_status update
+    if ($request->has('system_status') && !$request->has('mark_completed') && !$request->has('mark_skipped')) {
+        $data['system_status'] = $validated['system_status'];
+    }
+
+    // Handle registrar/admin specific fields
+    if (in_array($user->role->name, ['marriage_registrar', 'admin'])) {
+        if ($request->has('verification_status')) {
+            $statusName = $validated['verification_status'];
+            if (isset($verificationStatuses[$statusName])) {
+                $data['verification_status_id'] = $verificationStatuses[$statusName];
+                $data['verified_by'] = $user->id;
+            }
+        }
+        if ($request->has('verification_notes')) {
+            $data['verification_notes'] = $validated['verification_notes'];
+        }
+    }
+
+    // Marriage teller can only mark as completed via buttons
+    if ($user->role->name === 'marriage_teller') {
+        // If it's a regular edit (not from mark_completed/mark_skipped), don't allow system_status change
+        if (!$request->has('mark_completed') && !$request->has('mark_skipped')) {
+            unset($data['system_status']);
+        }
+    }
+    
+    // Update spouses if provided
+    if ($request->has('husband_name')) {
+        $husband = $marriage->spouses()->where('spouse_type', 'husband')->first();
+        if ($husband) {
+            $husbandData = [];
+            if ($request->has('husband_name')) $husbandData['name'] = strtoupper($request->husband_name);
+            if ($request->has('husband_age')) $husbandData['age'] = $request->husband_age;
+            if ($request->has('husband_occupation')) $husbandData['occupation'] = strtoupper($request->husband_occupation);
+            if ($request->has('husband_residence')) $husbandData['residence'] = strtoupper($request->husband_residence);
+            if ($request->has('husband_marital_status')) $husbandData['marital_status'] = $request->husband_marital_status;
+            if ($request->has('husband_father_name')) $husbandData['father_name'] = strtoupper($request->husband_father_name);
+            if ($request->has('husband_father_occupation')) $husbandData['father_occupation'] = strtoupper($request->husband_father_occupation);
+            if ($request->has('husband_father_residence')) $husbandData['father_residence'] = strtoupper($request->husband_father_residence);
+            if ($request->has('husband_mother_name')) $husbandData['mother_name'] = strtoupper($request->husband_mother_name);
+            if ($request->has('husband_mother_occupation')) $husbandData['mother_occupation'] = strtoupper($request->husband_mother_occupation);
+            if ($request->has('husband_mother_residence')) $husbandData['mother_residence'] = strtoupper($request->husband_mother_residence);
+            $husband->update($husbandData);
+        }
+    }
+    
+    if ($request->has('wife_name')) {
+        $wife = $marriage->spouses()->where('spouse_type', 'wife')->first();
+        if ($wife) {
+            $wifeData = [];
+            if ($request->has('wife_name')) $wifeData['name'] = strtoupper($request->wife_name);
+            if ($request->has('wife_age')) $wifeData['age'] = $request->wife_age;
+            if ($request->has('wife_occupation')) $wifeData['occupation'] = strtoupper($request->wife_occupation);
+            if ($request->has('wife_residence')) $wifeData['residence'] = strtoupper($request->wife_residence);
+            if ($request->has('wife_marital_status')) $wifeData['marital_status'] = $request->wife_marital_status;
+            if ($request->has('wife_father_name')) $wifeData['father_name'] = strtoupper($request->wife_father_name);
+            if ($request->has('wife_father_occupation')) $wifeData['father_occupation'] = strtoupper($request->wife_father_occupation);
+            if ($request->has('wife_father_residence')) $wifeData['father_residence'] = strtoupper($request->wife_father_residence);
+            if ($request->has('wife_mother_name')) $wifeData['mother_name'] = strtoupper($request->wife_mother_name);
+            if ($request->has('wife_mother_occupation')) $wifeData['mother_occupation'] = strtoupper($request->wife_mother_occupation);
+            if ($request->has('wife_mother_residence')) $wifeData['mother_residence'] = strtoupper($request->wife_mother_residence);
+            $wife->update($wifeData);
+        }
+    }
+    
+    // Update witnesses if provided
+    if ($request->has('witness1_name')) {
+        $witnesses = $marriage->witnesses()->get();
+        if ($witnesses->count() > 0) {
+            $witnesses[0]->update([
+                'name' => strtoupper($request->witness1_name),
+                'spouse_side' => $request->witness1_side ?? null,
+            ]);
+        } elseif ($request->witness1_name) {
+            $marriage->witnesses()->create([
+                'name' => strtoupper($request->witness1_name),
+                'spouse_side' => $request->witness1_side ?? null,
+                'created_by' => $user->id,
+            ]);
+        }
+    }
+    
+    if ($request->has('witness2_name')) {
+        $witnesses = $marriage->witnesses()->get();
+        if ($witnesses->count() > 1) {
+            $witnesses[1]->update([
+                'name' => strtoupper($request->witness2_name),
+                'spouse_side' => $request->witness2_side ?? null,
+            ]);
+        } elseif ($request->witness2_name) {
+            $marriage->witnesses()->create([
+                'name' => strtoupper($request->witness2_name),
+                'spouse_side' => $request->witness2_side ?? null,
+                'created_by' => $user->id,
+            ]);
+        }
+    }
+    
+    // Update entry_no and officer in marriage extension
+    $extensionData = [];
+    if ($request->has('entry_no')) {
+        $extensionData['entry_no'] = $request->entry_no;
+    }
+    
+    // Handle officer based on marriage type
+    if ($request->has('officer_name')) {
+        switch ($marriageTypeName) {
+            case 'Muslim':
+                $extensionData['muslim_officer'] = strtoupper($request->officer_name);
+                break;
+            case 'Christian':
+                $extensionData['pastor_name'] = strtoupper($request->officer_name);
+                break;
+            case 'Hindu':
+                $extensionData['registrar_officer'] = strtoupper($request->officer_name);
+                break;
+            case 'Civil':
+            default:
+                $extensionData['registrar_officer'] = strtoupper($request->officer_name);
+                break;
+        }
+    }
+    
+    if (!empty($extensionData)) {
+        $extension = $marriage->marriageExtension;
+        if ($extension) {
+            $extension->update($extensionData);
+        } else {
+            $extensionData['marriage_id'] = $marriage->id;
+            $extensionData['created_by'] = $user->id;
+            \App\Models\MarriageTypeExtension::create($extensionData);
+        }
+    }
+    
+    // Update PDF page notes if provided
+    if ($request->has('page_notes') && $request->has('pdf_page_id')) {
+        \App\Models\PdfPage::where('id', $request->pdf_page_id)->update([
+            'notes' => $request->page_notes
+        ]);
+    }
+
+    $marriage->update($data);
+    
+    return response()->json(['success' => true, 'message' => 'Marriage record updated successfully.']);
+}
+
+/**
+ * Approve a marriage record (Approve & Complete button)
+ */
+protected function approveMarriage(Request $request, Marriage $marriage)
+{
+    $user = Auth::user();
+    
+    // Get marriage type name to determine which officer field to use
+    $marriageTypeName = $marriage->marriageType->name ?? '';
+    
+    // Update marriage record (DO NOT include 'notes' here)
+    $updateData = [
+        'system_status' => 'Completed',
+        'has_errors' => false,
+        'updated_by' => $user->id,
+    ];
+    
+    // Update basic fields if provided
+    if ($request->has('certificate_serial')) {
+        $updateData['certificate_serial'] = strtoupper($request->certificate_serial);
+    }
+    if ($request->has('marriage_date')) {
+        $updateData['marriage_date'] = $request->marriage_date;
+    }
+    if ($request->has('reg_date')) {
+        $updateData['reg_date'] = $request->reg_date;
+    }
+    if ($request->has('venue')) {
+        $updateData['venue'] = strtoupper($request->venue);
+    }
+    if ($request->has('license_no')) {
+        $updateData['license_no'] = strtoupper($request->license_no);
+    }
+    if ($request->has('sub_county')) {
+        $updateData['sub_county'] = strtoupper($request->sub_county);
+    }
+    if ($request->has('ward_id')) {
+        $updateData['ward_id'] = $request->ward_id;
+    }
+    if ($request->has('county')) {
+        $updateData['county'] = $request->county;
+    }
+    
+    $marriage->update($updateData);
+    
+    // Update spouses with full parent information
+    if ($request->has('husband_name')) {
+        $husband = $marriage->spouses()->where('spouse_type', 'husband')->first();
+        if ($husband) {
+            $husbandData = [
+                'name' => strtoupper($request->husband_name),
+                'age' => $request->husband_age,
+                'occupation' => strtoupper($request->husband_occupation ?? ''),
+                'residence' => strtoupper($request->husband_residence ?? ''),
+                'marital_status' => $request->husband_marital_status,
+            ];
+            
+            // Add father information
+            if ($request->has('husband_father_name')) {
+                $husbandData['father_name'] = strtoupper($request->husband_father_name);
+            }
+            if ($request->has('husband_father_occupation')) {
+                $husbandData['father_occupation'] = strtoupper($request->husband_father_occupation);
+            }
+            if ($request->has('husband_father_residence')) {
+                $husbandData['father_residence'] = strtoupper($request->husband_father_residence);
+            }
+            
+            // Add mother information
+            if ($request->has('husband_mother_name')) {
+                $husbandData['mother_name'] = strtoupper($request->husband_mother_name);
+            }
+            if ($request->has('husband_mother_occupation')) {
+                $husbandData['mother_occupation'] = strtoupper($request->husband_mother_occupation);
+            }
+            if ($request->has('husband_mother_residence')) {
+                $husbandData['mother_residence'] = strtoupper($request->husband_mother_residence);
+            }
+            
+            $husband->update($husbandData);
+        }
+    }
+    
+    if ($request->has('wife_name')) {
+        $wife = $marriage->spouses()->where('spouse_type', 'wife')->first();
+        if ($wife) {
+            $wifeData = [
+                'name' => strtoupper($request->wife_name),
+                'age' => $request->wife_age,
+                'occupation' => strtoupper($request->wife_occupation ?? ''),
+                'residence' => strtoupper($request->wife_residence ?? ''),
+                'marital_status' => $request->wife_marital_status,
+            ];
+            
+            // Add father information
+            if ($request->has('wife_father_name')) {
+                $wifeData['father_name'] = strtoupper($request->wife_father_name);
+            }
+            if ($request->has('wife_father_occupation')) {
+                $wifeData['father_occupation'] = strtoupper($request->wife_father_occupation);
+            }
+            if ($request->has('wife_father_residence')) {
+                $wifeData['father_residence'] = strtoupper($request->wife_father_residence);
+            }
+            
+            // Add mother information
+            if ($request->has('wife_mother_name')) {
+                $wifeData['mother_name'] = strtoupper($request->wife_mother_name);
+            }
+            if ($request->has('wife_mother_occupation')) {
+                $wifeData['mother_occupation'] = strtoupper($request->wife_mother_occupation);
+            }
+            if ($request->has('wife_mother_residence')) {
+                $wifeData['mother_residence'] = strtoupper($request->wife_mother_residence);
+            }
+            
+            $wife->update($wifeData);
+        }
+    }
+    
+    // Update witnesses
+    if ($request->has('witness1_name')) {
+        $witnesses = $marriage->witnesses()->get();
+        if ($witnesses->count() > 0) {
+            $witnesses[0]->update([
+                'name' => strtoupper($request->witness1_name),
+                'spouse_side' => $request->witness1_side ?? null,
+            ]);
+        } elseif ($request->witness1_name) {
+            $marriage->witnesses()->create([
+                'name' => strtoupper($request->witness1_name),
+                'spouse_side' => $request->witness1_side ?? null,
+                'created_by' => $user->id,
+            ]);
+        }
+    }
+    
+    if ($request->has('witness2_name')) {
+        $witnesses = $marriage->witnesses()->get();
+        if ($witnesses->count() > 1) {
+            $witnesses[1]->update([
+                'name' => strtoupper($request->witness2_name),
+                'spouse_side' => $request->witness2_side ?? null,
+            ]);
+        } elseif ($request->witness2_name) {
+            $marriage->witnesses()->create([
+                'name' => strtoupper($request->witness2_name),
+                'spouse_side' => $request->witness2_side ?? null,
+                'created_by' => $user->id,
+            ]);
+        }
+    }
+        
+    // Update marriage extension (entry_no and officer fields)
+    $extensionData = [];
+
+    // Handle entry_no
+    if ($request->has('entry_no')) {
+        $extensionData['entry_no'] = $request->entry_no;
+    }
+
+    // Get marriage type name
+    $marriageTypeName = $marriage->marriageType->name ?? '';
+
+    // Handle officer based on marriage type - THIS IS THE KEY FIX
+    if ($request->has('officer_name') && !empty($request->officer_name)) {
+        switch ($marriageTypeName) {
+            case 'Muslim':
+                $extensionData['muslim_officer'] = strtoupper($request->officer_name);
+                break;
+            case 'Christian':
+                $extensionData['pastor_name'] = strtoupper($request->officer_name);
+                break;
+            case 'Hindu':
+                $extensionData['registrar_officer'] = strtoupper($request->officer_name);
+                break;
+            case 'Civil':
+            default:
+                $extensionData['registrar_officer'] = strtoupper($request->officer_name);
+                break;
+        }
+    }
+
+    // Also handle individual officer fields
+    if ($request->has('registrar_officer') && !empty($request->registrar_officer)) {
+        $extensionData['registrar_officer'] = strtoupper($request->registrar_officer);
+    }
+    if ($request->has('muslim_officer') && !empty($request->muslim_officer)) {
+        $extensionData['muslim_officer'] = strtoupper($request->muslim_officer);
+    }
+    if ($request->has('pastor_name') && !empty($request->pastor_name)) {
+        $extensionData['pastor_name'] = strtoupper($request->pastor_name);
+    }
+
+    // Handle extension-specific fields
+    $extensionSpecificFields = ['mahr_agreed', 'mahr_paid', 'mahr_deferred', 'gifts', 'church_org', 'temple', 'dowry'];
+    foreach ($extensionSpecificFields as $field) {
+        if ($request->has($field) && !empty($request->$field)) {
+            $extensionData[$field] = $request->$field;
+        }
+    }
+
+    // Update or create extension
+    if (!empty($extensionData)) {
+        $extension = $marriage->marriageExtension;
+        if ($extension) {
+            $extension->update($extensionData);
+        } else {
+            $extensionData['marriage_id'] = $marriage->id;
+            $extensionData['created_by'] = $user->id;
+            \App\Models\MarriageTypeExtension::create($extensionData);
+        }
+    }
+}
+
+
+protected function rejectMarriage(Request $request, Marriage $marriage)
+{
+    $user = Auth::user();
+    
+    // Update marriage record
+    $updateData = [
+        'system_status' => 'Skipped',
+        'has_errors' => true,
+        'updated_by' => $user->id,
+    ];
+    
+    $marriage->update($updateData);
+    
+    // Update PDF page status to in_progress and save notes
+    if ($request->has('pdf_page_id')) {
+        $pdfPage = \App\Models\PdfPage::where('id', $request->pdf_page_id)->first();
+        if ($pdfPage) {
+            $pdfPageData = [
+                'status' => 'in_progress',
+            ];
+            
+            // Save notes to PDF page
+            if ($request->has('page_notes')) {
+                $pdfPageData['notes'] = $request->page_notes;
+            } else {
+                $pdfPageData['notes'] = 'Rejected by teller - needs corrections';
+            }
+            
+            $pdfPage->update($pdfPageData);
+        }
+    }
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Marriage record rejected and sent back to clerk for corrections.'
+    ]);
+}
+
+
+
 
     public function destroy(Marriage $marriage)
     {
@@ -1704,9 +2347,7 @@ class MarriageController extends Controller
 
     // ==================== ROLE-SPECIFIC ACTIONS ====================
 
-    /**
-     * Data Clerk - Process Bulk Upload
-     */
+
     public function processBulkUpload(Request $request)
     {
         $user = Auth::user();
@@ -1746,9 +2387,6 @@ class MarriageController extends Controller
         ]);
     }
 
-    /**
-     * Data Clerk - Quick Save Basic Info
-     */
     public function quickSave(Request $request, Marriage $marriage)
     {
         $user = Auth::user();
@@ -1783,9 +2421,6 @@ class MarriageController extends Controller
         ]);
     }
 
-    /**
-     * Marriage Teller - Create Clerk Assignment
-     */
     public function createClerkAssignment(Request $request)
     {
         $user = Auth::user();
@@ -1827,9 +2462,7 @@ class MarriageController extends Controller
             ->with('success', 'Clerk assignment created successfully.');
     }
 
-    /**
-     * Marriage Teller - Complete Detailed Entry
-     */
+
     public function completeDetails(Request $request, Marriage $marriage)
     {
         $user = Auth::user();
@@ -1866,9 +2499,7 @@ class MarriageController extends Controller
             ->with('success', 'Marriage details completed successfully.');
     }
 
-    /**
-     * Marriage Registrar - Verify Marriage
-     */
+
     public function verify(Request $request, Marriage $marriage)
     {
         $user = Auth::user();
@@ -1912,10 +2543,6 @@ class MarriageController extends Controller
 
     // ==================== HELPER METHODS ====================
 
-
-    /**
-     * Get Data Clerk specific statistics
-     */
     private function getDataClerkStats($user, $baseStats)
     {
         $currentMonth = now()->month;
@@ -1985,9 +2612,6 @@ class MarriageController extends Controller
     }
 
 
-    /**
-     * Get Marriage Registrar specific statistics
-     */
     private function getRegistrarStats($user, $baseStats)
     {
         // Get verification status category IDs
@@ -2029,9 +2653,6 @@ class MarriageController extends Controller
         ]);
     }
 
-    /**
-     * Show role-specific dashboard when id = 0
-     */
     private function showRoleDashboard($role, $user)
     {
         return match($role) {
@@ -2042,9 +2663,6 @@ class MarriageController extends Controller
         };
     }
 
-    /**
-     * Data Clerk - Bulk Upload Dashboard
-     */
     private function showDataClerkBulkUpload($user)
     {
         $assignment = ClerkManagement::where('data_clerk_id', $user->id)
@@ -2059,9 +2677,7 @@ class MarriageController extends Controller
         return view('marriages.data-clerk-bulk-upload', compact('assignment', 'pendingMarriages'));
     }
 
-    /**
-     * Marriage Teller - Clerk Management Dashboard
-     */
+
     private function showMarriageTellerClerkManagement($user)
     {
         $dataClerks = User::whereHas('role', function($query) {
@@ -2077,9 +2693,6 @@ class MarriageController extends Controller
         return view('marriages.marriage-teller-clerk-management', compact('dataClerks', 'assignments'));
     }
 
-    /**
-     * Marriage Registrar - Verification Queue
-     */
     private function showRegistrarVerificationQueue($user)
     {
         // Get verification status category ID for 'Unverified'
@@ -2116,9 +2729,6 @@ class MarriageController extends Controller
         return view('marriages.registrar-verification-queue', compact('verificationQueue', 'stats'));
     }
 
-    /**
-     * Show marriage record based on user role
-     */
     private function showMarriageForRole($marriage, $categories, $role, $user)
     {
         return match($role) {
@@ -2129,9 +2739,6 @@ class MarriageController extends Controller
         };
     }
 
-    /**
-     * Data Clerk - Quick Entry View
-     */
     private function showDataClerkMarriage($marriage, $categories, $user)
     {
         // Data clerks can only edit their own pending records
@@ -2143,9 +2750,7 @@ class MarriageController extends Controller
         return view('marriages.show', compact('marriage', 'categories'));
     }
 
-    /**
-     * Marriage Teller - Detail Entry View
-     */
+
     private function showMarriageTellerMarriage($marriage, $categories, $user)
     {
         // Marriage tellers can complete details for pending records in their team
@@ -2157,9 +2762,6 @@ class MarriageController extends Controller
         return view('marriages.show', compact('marriage', 'categories'));
     }
 
-    /**
-     * Marriage Registrar - Verification View
-     */
     private function showRegistrarMarriage($marriage, $categories, $user)
     {
         // Get verification status category ID for 'Unverified'
@@ -2169,7 +2771,7 @@ class MarriageController extends Controller
         
         // Registrars can verify completed but unverified records
         if ($marriage->system_status == 'Completed' && $marriage->verification_status_id == $unverifiedStatusId) {
-            return view('marriages.registrar-verification', compact('marriage', 'categories'));
+            return view('marriages.show', compact('marriage', 'categories'));
         }
         
         // Read-only view for other records
@@ -2179,32 +2781,33 @@ class MarriageController extends Controller
     // ==================== PERMISSION CHECKS ====================
 
 
-    private function canAccessMarriage(Marriage $marriage, User $user)
-    {
-        // Get role name via relationship
-        $roleName = $user->role->name ?? null;
+private function canAccessMarriage(Marriage $marriage, User $user)
+{
+    // Get role name via relationship
+    $roleName = $user->role->name ?? null;
 
-        if ($roleName === 'admin') {
-            return true;
-        }
-
-        if ($roleName === 'marriage_teller') {
-            return ClerkManagement::where('marriage_teller_id', $user->id)
-                ->whereHas('marriages', function($query) use ($marriage) {
-                    $query->where('id', $marriage->id);
-                })
-                ->exists();
-        } 
-
-        if ($roleName === 'marriage_registrar') {
-            // Marriage registrars should have access to all marriages
-            // Remove the relationship check that's causing the error
-            return true;
-        }
-
-        // Default: only creator can access
-        return $marriage->created_by === $user->id;
+    if ($roleName === 'admin') {
+        return true;
     }
+
+    if ($roleName === 'marriage_teller') {
+        // Check if this marriage belongs to a clerk assigned to this teller
+        // The marriage has a 'created_by' field which is the clerk's ID
+        // We need to check if that clerk is assigned to this teller
+        return ClerkManagement::where('marriage_teller_id', $user->id)
+            ->where('data_clerk_id', $marriage->created_by)
+            ->where('status', 'active')
+            ->exists();
+    } 
+
+    if ($roleName === 'marriage_registrar') {
+        // Marriage registrars should have access to all marriages
+        return true;
+    }
+
+    // Default: only creator can access
+    return $marriage->created_by === $user->id;
+}
 
     private function canEditMarriage(Marriage $marriage, User $user)
     {
@@ -2317,10 +2920,7 @@ class MarriageController extends Controller
                     ->withInput();
     }
 }
-/**
- * Helper method to calculate completion rate for a marriage
- * This should be added to your Marriage model or as a controller method
- */
+
 private function calculateMarriageCompletionRate($marriage)
 {
     $totalFields = 0;

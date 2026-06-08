@@ -31,11 +31,11 @@ class County extends Model
     }
 
     public function wards()
-{
-    $counties = County::orderBy('ward')->get();
+    {
+        $counties = County::orderBy('wards')->get();
 
-    return view('marriages.create-from-pdf', compact('counties'));
-}
+        return view('marriages.create-from-pdf', compact('counties'));
+    }
 
 public function subCounties()
 {

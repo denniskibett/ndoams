@@ -14,10 +14,7 @@
         'resources/css/app.css',
         'resources/js/app.js',
         'resources/js/bootstrap.js',
-        'resources/js/index.js',
-        'resources/js/components/charts/chart-01.js',
-        'resources/js/components/charts/chart-02.js',
-        'resources/js/components/charts/chart-03.js'
+        'resources/js/index.js'
     ])
 
     <!-- Auto-load all JS components -->

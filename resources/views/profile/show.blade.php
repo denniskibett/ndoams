@@ -13,7 +13,7 @@
     
     <!-- Success Message -->
     <div id="success-message" 
-         class="hidden fixed top-20 right-5 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300"
+         class="hidden fixed top-20 right-5 z-99999 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300"
          x-data="{ show: false }"
          x-show="show"
          x-transition:enter="transition ease-out duration-300"
@@ -240,7 +240,7 @@
     </div>
 
     <!-- Modal Overlay -->
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300"
+    <div class="fixed inset-0 z-99999 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300"
          x-show="modalOpen"
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"

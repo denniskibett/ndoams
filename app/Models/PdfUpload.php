@@ -1,4 +1,5 @@
 <?php
+// app/Models/PdfUpload.php
 
 namespace App\Models;
 
@@ -12,6 +13,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PdfUpload extends Model
 {
     use HasFactory, SoftDeletes;
+
+    // Status constants for PDF UPLOADS (matches database ENUM)
+    const STATUS_UPLOADED = 'uploaded';   // pending, not assigned yet
+    const STATUS_ASSIGNED = 'assigned';   // some pages assigned to clerks
+    const STATUS_COMPLETED = 'completed'; // all pages completed
+    const STATUS_PUBLISHED = 'published'; // final published state
 
     protected $fillable = [
         'uuid',
@@ -41,11 +48,15 @@ class PdfUpload extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            $model->uuid = Str::uuid()->toString();
+            if (!$model->uuid) {
+                $model->uuid = Str::uuid()->toString();
+            }
+            if (!$model->status) {
+                $model->status = self::STATUS_UPLOADED;
+            }
         });
     }
 
-    
     // Relationships
     public function uploader(): BelongsTo
     {
@@ -57,7 +68,6 @@ class PdfUpload extends Model
         return $this->belongsTo(County::class, 'county_code', 'county_code');
     }
 
-    
     public function marriageType(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'marriage_type_id')
@@ -72,6 +82,91 @@ class PdfUpload extends Model
     public function marriages()
     {
         return $this->hasMany(Marriage::class, 'pdf_id');
+    }
+
+    public function clerkAssignments(): HasMany
+    {
+        return $this->hasMany(ClerkManagement::class, 'pdf_upload_id');
+    }
+
+    // Update status based on all pages
+    public function updateStatusFromPages()
+    {
+        if ($this->total_pages == 0) {
+            return $this;
+        }
+
+        $totalPages = $this->total_pages;
+        
+        // Count pages by status
+        $completedPages = $this->pages()
+            ->whereIn('status', [
+                PdfPage::STATUS_COMPLETED,
+                PdfPage::STATUS_REVIEW_NEEDED
+            ])->count();
+            
+        $assignedPages = $this->pages()
+            ->where('status', PdfPage::STATUS_ASSIGNED)
+            ->count();
+            
+        $inProgressPages = $this->pages()
+            ->where('status', PdfPage::STATUS_IN_PROGRESS)
+            ->count();
+            
+        $pendingPages = $this->pages()
+            ->where('status', PdfPage::STATUS_PENDING)
+            ->count();
+        
+        $newStatus = self::STATUS_UPLOADED;
+        
+        // Determine new status based on page statuses
+        if ($completedPages >= $totalPages && $totalPages > 0) {
+            $newStatus = self::STATUS_COMPLETED;
+        } elseif ($assignedPages > 0 || $inProgressPages > 0) {
+            $newStatus = self::STATUS_ASSIGNED;
+        } elseif ($pendingPages > 0) {
+            $newStatus = self::STATUS_UPLOADED;
+        }
+        
+        // Only update if status has changed
+        if ($this->status !== $newStatus) {
+            $this->status = $newStatus;
+            $this->saveQuietly(); // Use saveQuietly to avoid infinite loops
+        }
+        
+        return $this;
+    }
+    
+    // Check if PDF is available for assignment
+    public function isAvailableForAssignment()
+    {
+        return $this->status === self::STATUS_UPLOADED;
+    }
+    
+    // Scopes for available assignments
+    public function scopeAvailableForAssignment($query)
+    {
+        return $query->where('status', self::STATUS_UPLOADED);
+    }
+    
+    public function scopeFilterByPeriod($query, $year, $month = null)
+    {
+        $query->where('year', $year);
+        
+        if ($month) {
+            $query->where('month', $month);
+        }
+        
+        return $query;
+    }
+    
+    public function scopeFilterByType($query, $typeId)
+    {
+        if ($typeId) {
+            $query->where('marriage_type_id', $typeId);
+        }
+        
+        return $query;
     }
 
     // Helper method to get file size in readable format
@@ -106,32 +201,28 @@ class PdfUpload extends Model
         return round($bytesPerPage, 2) . ' B';
     }
 
-    // Scopes
-    public function scopeActive($query)
-    {
-        return $query->where('status', 'active');
-    }
-
-    public function scopeFilterByPeriod($query, $year, $month = null)
-    {
-        $query->where('year', $year);
-        
-        if ($month) {
-            $query->where('month', $month);
-        }
-        
-        return $query;
-    }
-
     // Helper methods
     public function completedPagesCount(): int
     {
-        return $this->pages()->where('status', 'completed')->count();
+        return $this->pages()->whereIn('status', [
+            PdfPage::STATUS_COMPLETED,
+            PdfPage::STATUS_REVIEW_NEEDED
+        ])->count();
     }
 
     public function pendingPagesCount(): int
     {
-        return $this->pages()->where('status', 'pending')->count();
+        return $this->pages()->where('status', PdfPage::STATUS_PENDING)->count();
+    }
+    
+    public function inProgressPagesCount(): int
+    {
+        return $this->pages()->where('status', PdfPage::STATUS_IN_PROGRESS)->count();
+    }
+    
+    public function assignedPagesCount(): int
+    {
+        return $this->pages()->where('status', PdfPage::STATUS_ASSIGNED)->count();
     }
 
     public function completionPercentage(): float
@@ -143,7 +234,7 @@ class PdfUpload extends Model
     public function getNextPendingPage()
     {
         return $this->pages()
-            ->where('status', 'pending')
+            ->where('status', PdfPage::STATUS_PENDING)
             ->orderBy('page_number')
             ->first();
     }
@@ -157,10 +248,21 @@ class PdfUpload extends Model
             return 'Month ' . $this->month;
         }
     }
+    
+    // Get status badge class for UI
+    public function getStatusBadgeClassAttribute()
+    {
+        return match($this->status) {
+            self::STATUS_UPLOADED => 'bg-yellow-100 text-yellow-800',
+            self::STATUS_ASSIGNED => 'bg-blue-100 text-blue-800',
+            self::STATUS_COMPLETED => 'bg-green-100 text-green-800',
+            self::STATUS_PUBLISHED => 'bg-purple-100 text-purple-800',
+            default => 'bg-gray-100 text-gray-800'
+        };
+    }
 
     public function pdfPages()
     {
         return $this->hasMany(PdfPage::class);
     }
-
 }

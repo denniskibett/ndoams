@@ -13,7 +13,7 @@ use App\Http\Controllers\PdfUploadController;
 use App\Http\Controllers\ClerkManagementController;
 use App\Http\Controllers\Admin\SystemController;
 use App\Http\Controllers\Auth\GoogleController;
-
+use App\Http\Controllers\Auth\PasswordController;
 use App\Models\Marriage;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -35,6 +35,9 @@ require __DIR__.'/auth.php';
 
 // ------------------ AUTHENTICATED ROUTES ------------------
 Route::middleware('auth')->group(function () {
+
+    Route::get('/set-password', [PasswordController::class, 'showSetPasswordForm'])->name('password.set-form');
+    Route::post('/set-password', [PasswordController::class, 'set'])->name('password.set');
 
     // -------- PROFILE ROUTES --------
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
@@ -102,13 +105,22 @@ Route::middleware('auth')->group(function () {
     Route::prefix('clerk-management')->name('clerk-management.')->group(function () {
         Route::get('/', [ClerkManagementController::class, 'index'])->name('index');
         Route::post('/', [ClerkManagementController::class, 'store'])->name('store');
-        Route::get('/{clerkManagement}', [ClerkManagementController::class, 'showProgress'])->name('show');
+        
+        // STATIC ROUTES FIRST (no model binding)
+        Route::get('/pending-pdfs', [ClerkManagementController::class, 'getPendingPdfs'])->name('pending-pdfs');
+        Route::post('/assign-multiple', [ClerkManagementController::class, 'assignMultiplePdfs'])->name('assign-multiple');
+        
+        // DYNAMIC ROUTES LAST (with model binding)
+        Route::get('/{clerkManagement}', [ClerkManagementController::class, 'show'])->name('show');
         Route::put('/{clerkManagement}', [ClerkManagementController::class, 'update'])->name('update');
+        Route::delete('/{clerkManagement}', [ClerkManagementController::class, 'destroy'])->name('destroy');
+        Route::get('/{clerkManagement}/progress', [ClerkManagementController::class, 'showProgress'])->name('progress');
+        Route::get('/{clerkManagement}/pending-pdfs', [ClerkManagementController::class, 'getPendingPdfsForClerk'])->name('pending-pdfs-for-clerk');
+        
+        // PDF assignment routes
         Route::get('/assign-pdf/{pdfUpload}', [ClerkManagementController::class, 'assignPdf'])->name('assign-pdf');
         Route::post('/assign-pdf/{pdfUpload}', [ClerkManagementController::class, 'storePdfAssignment'])->name('store-pdf-assignment');
-        Route::get('/{clerkManagement}/progress', [ClerkManagementController::class, 'showProgress'])->name('progress');
     });
-    Route::resource('clerks', ClerkManagementController::class)->only(['create', 'store', 'edit', 'update']);
 
     // -------- OTHER RESOURCE ROUTES --------
     Route::resource('spouses', SpouseController::class);
@@ -139,10 +151,28 @@ Route::middleware('auth')->group(function () {
     Route::post('/pdf-pages/{page}/complete', [PdfUploadController::class, 'completePage'])->name('pdf-pages.complete');
     Route::post('/pdf-pages/{page}/quick-data', [PdfUploadController::class, 'saveQuickData'])->name('pdf-pages.quick-data');
     Route::get('/pdf-pages/{pdfPage}', [PdfUploadController::class, 'showPageDetail'])->name('pdf-pages.show');
+    Route::post('/pdf-pages/{page}/update-status', [PdfUploadController::class, 'updatePageStatus'])->name('pdf-pages.update-status');
+    // Dashboard data routes
+    Route::get('/dashboard/pdf-pages', [DashboardController::class, 'getTableData'])->name('dashboard.pdf-pages');
+    Route::get('/dashboard/chart-data', [DashboardController::class, 'getChartData'])->name('dashboard.chart-data');
+    // Dashboard chart data routes
+    Route::get('/dashboard/data-clerk/daily-productivity', [DashboardController::class, 'getDataClerkProductivity'])->name('dashboard.data-clerk.productivity');
+    Route::get('/dashboard/data-clerk/status-distribution', [DashboardController::class, 'getDataClerkStatusDistribution'])->name('dashboard.data-clerk.status');
+    // Dashboard chart data routes for other roles
+    Route::get('/dashboard/marriage-registrar/verification-trend', [DashboardController::class, 'getMarriageRegistrarVerificationTrend'])->name('dashboard.marriage-registrar.verification-trend');
+    Route::get('/dashboard/admin/activity-timeline', [DashboardController::class, 'getAdminActivityTimeline'])->name('dashboard.admin.activity-timeline');
+    Route::get('/dashboard/admin/upload-trends', [DashboardController::class, 'getAdminUploadTrends'])->name('dashboard.admin.upload-trends');
+
+    // Add these routes to your web.php inside the auth middleware group
+    Route::get('/dashboard/marriage-teller/weekly-trend', [DashboardController::class, 'getMarriageTellerWeeklyTrend'])->name('dashboard.marriage-teller.weekly-trend');
+    Route::get('/dashboard/data-clerk/productivity', [DashboardController::class, 'getDataClerkProductivity'])->name('dashboard.data-clerk.productivity');
+    Route::get('/dashboard/data-clerk/status-distribution', [DashboardController::class, 'getDataClerkStatusDistribution'])->name('dashboard.data-clerk.status');
 
     Route::post('/pdf-uploads/quick-create-from-page', [PdfUploadController::class, 'quickCreateFromPage'])->name('pdf.quick-create-from-page')->middleware('auth');
-
+    Route::post('/pdf-uploads/full-create-from-page', [PdfUploadController::class, 'fullCreateFromPage'])->name('pdf.full-create-from-page')->middleware('auth');
+    
     Route::post('/pdf-uploads/upload-base64-chunk', [PdfUploadController::class, 'uploadBase64Chunk'])->name('pdf-uploads.upload-base64-chunk');
+
     
     // -------- SYSTEM SETTINGS --------
     Route::prefix('system')->name('system.')->group(function () {
@@ -186,6 +216,10 @@ Route::prefix('api')->middleware('auth')->group(function () {
         return response()->json(['wards' => $wards, 'otherWards' => $otherWards]);
     });
 
+    Route::get('/pdf-uploads/wards', [PdfUploadController::class, 'getWards'])->name('pdf-uploads.wards');
+    Route::get('/api/wards', [App\Http\Controllers\PdfUploadController::class, 'getWards'])
+            ->name('api.wards');
+            
     // PDF Uploads API
     Route::get('/pdf-uploads/{pdf}', function ($pdfId) {
         $pdf = \App\Models\PdfUpload::find($pdfId);
@@ -203,4 +237,8 @@ Route::prefix('api')->middleware('auth')->group(function () {
     Route::post('/marriages/{marriage}/update-from-pdf', [MarriageController::class, 'updateFromPdf'])->name('marriages.update-from-pdf');
     Route::get('/marriages/by-pdf/{pdfId}', [MarriageController::class, 'getByPdfIdApi']);
     Route::get('/marriages/create/from-pdf-page/{pdfPage}', [MarriageController::class, 'createFromPdfPage'])->name('marriages.create-from-pdf-page');
+    Route::post('/marriages/{marriage}/review', [PdfUploadController::class, 'reviewMarriage'])->name('marriages.review')->middleware('auth');
+    Route::post('/pdf-pages/{page}/update-status', [PdfUploadController::class, 'updatePageStatus'])->name('pdf-pages.update-status')->middleware('auth');
+
+    Route::post('/marriages/{marriage}/review', [PdfUploadController::class, 'reviewMarriage'])->name('marriages.review')->middleware('auth');
 });

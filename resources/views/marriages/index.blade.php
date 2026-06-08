@@ -36,26 +36,9 @@
     @include('partials.card.marriages-card', ['stats' => $stats])
 
     <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Marriage Records</h1>
-            <p class="text-gray-600 dark:text-gray-400">Manage all marriage certificates</p>
-        </div>
         
         <div class="flex space-x-3">
-            <!-- Add Marriage Button - Available to all except public -->
-            @if(in_array(auth()->user()->role->name, ['admin', 'data_clerk', 'marriage_teller', 'marriage_registrar']))
-            <a href="{{ route('marriages.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-                Add Marriage
-            </a>
-            @endif
-            
-            <!-- Role-specific action buttons -->
-            @if(auth()->user()->role->name === 'data_clerk')
-            <a href="{{ route('images.index') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
-                📁 Manage Images
-            </a>
-            @endif
-                        
+              
             @if(auth()->user()->role->name === 'marriage_registrar')
             <a href="{{ route('marriages.show', 0) }}" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
                 ✅ Verification Queue

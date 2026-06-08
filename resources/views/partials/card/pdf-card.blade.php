@@ -11,13 +11,13 @@
                 <div class="mt-3 flex items-end justify-between">
                     <div>
                         <h4 class="text-2xl font-bold text-gray-800 dark:text-white/90">
-                            {{ $cardData['total_records'] }}
+                            {{ number_format($cardData['total_records']) }}
                         </h4>
                     </div>
 
                     <div class="flex items-center gap-1">
                         <span class="flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600 dark:bg-blue-500/15 dark:text-blue-500">
-                            {{ $cardData['today_records'] }}
+                            {{ number_format($cardData['today_records']) }}
                         </span>
                         <span class="text-xs text-gray-500 dark:text-gray-400">
                             today
@@ -35,7 +35,7 @@
                 <div class="mt-3 flex items-end justify-between">
                     <div>
                         <h4 class="text-2xl font-bold text-gray-800 dark:text-white/90">
-                            {{ $cardData['data_clerks'] }}
+                            {{ number_format($cardData['data_clerks']) }}
                         </h4>
                     </div>
 
@@ -56,7 +56,7 @@
                 <div class="mt-3 flex items-end justify-between">
                     <div>
                         <h4 class="text-2xl font-bold text-gray-800 dark:text-white/90">
-                            {{ $cardData['storage_used_mb'] }} MB
+                            {{ number_format($cardData['storage_used_mb'], 2) }} MB
                         </h4>
                     </div>
 
@@ -77,7 +77,7 @@
                 <div class="mt-3 flex items-end justify-between">
                     <div>
                         <h4 class="text-2xl font-bold text-gray-800 dark:text-white/90">
-                            {{ $cardData['linked_pdfs'] }}
+                            {{ number_format($cardData['linked_pdfs']) }}
                         </h4>
                     </div>
 
@@ -88,7 +88,7 @@
                                 : 0;
                         @endphp
                         <span class="flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-600 dark:bg-orange-500/15 dark:text-orange-500">
-                            {{ $linkedPercentage }}%
+                            {{ number_format($linkedPercentage, 1) }}%
                         </span>
                         <span class="text-xs text-gray-500 dark:text-gray-400">
                             linked
@@ -106,23 +106,24 @@
                 <div class="mt-3 flex items-end justify-between">
                     <div>
                         <h4 class="text-2xl font-bold text-gray-800 dark:text-white/90">
-                            {{ $cardData['completion_rate'] }}%
+                            {{ number_format($cardData['completion_rate'], 1) }}%
                         </h4>
                     </div>
 
                     <div class="flex items-center gap-1">
                         @php
-                            $completionChange = 0; // Default value
+                            $completionChange = 0;
                             if (isset($cardData['previous_completion_rate'])) {
-                                $completionChange = $cardData['completion_rate'] - $cardData['previous_completion_rate'];
+                                $completionChange = (float)$cardData['completion_rate'] - (float)$cardData['previous_completion_rate'];
                             }
                             $isPositive = $completionChange >= 0;
+                            $changeClass = $isPositive ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-500' : 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-500';
                         @endphp
-                        <span class="flex items-center gap-1 rounded-full {{ $isPositive ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-500' : 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-500' }} px-2 py-0.5 text-xs font-medium">
-                            {{ $isPositive ? '+' : '' }}{{ number_format($completionChange, 1) }}%
+                        <span class="flex items-center gap-1 rounded-full {{ $changeClass }} px-2 py-0.5 text-xs font-medium">
+                            {{ $isPositive ? '+' : '' }}{{ number_format(abs($completionChange), 1) }}%
                         </span>
                         <span class="text-xs text-gray-500 dark:text-gray-400">
-                            vs last
+                            vs last month
                         </span>
                     </div>
                 </div>

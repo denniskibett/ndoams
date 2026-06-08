@@ -13,6 +13,7 @@
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.2",
         "laravel/tinker": "^2.10.1",
+        "maatwebsite/excel": "^3.1",
         "pion/laravel-chunk-upload": "^1.5",
         "rahulhaque/laravel-filepond": "^12.3",
         "rosell-dk/webp-convert": "^2.9",

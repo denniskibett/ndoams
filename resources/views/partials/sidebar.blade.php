@@ -1,10 +1,12 @@
 <script>
 // Define role-based menu permissions
 window.menuPermissions = {
-    'data_clerk': ['dashboard','images','pdfs', 'charts'], //, 'ui_elements', 'authentication'
-    'marriage_registrar': ['dashboard', 'marriages', 'spouses', 'witnesses', 'clerks', 'charts'],
-    'marriage_teller': ['dashboard', 'marriages', 'clerks', 'pdfs', 'charts'],
-    'user': ['dashboard', 'charts']
+    'data_clerk': ['dashboard','pdfs'], //, 'ui_elements', 'authentication'
+    'marriage_registrar': ['dashboard', 'pdfs', 'marriages', 'spouses', 'witnesses', 'clerks'],
+    'marriage_teller': ['dashboard', 'marriages', 'clerks', 'pdfs'],
+    'user': ['dashboard','pdfs', 'images', 'charts'],
+    'attorney_general': ['dashboard','pdfs', 'marriages', 'charts'],
+    'admin': ['dashboard','pdfs', 'images', 'marriages', 'spouses', 'witnesses', 'clerks', 'users'],
     
 };
 </script>
@@ -14,30 +16,32 @@ window.menuPermissions = {
   class="sidebar fixed left-0 top-0 z-9999 flex h-screen w-[290px] flex-col overflow-y-hidden border-r border-gray-200 bg-white px-5 duration-300 ease-linear dark:border-gray-800 dark:bg-black lg:static lg:translate-x-0"
   @click.outside="sidebarToggle = false"
 >
-  <!-- SIDEBAR HEADER -->
-  <div
-    :class="sidebarToggle ? 'justify-center' : 'justify-between'"
-    class="sidebar-header flex items-center gap-2 pb-7 pt-8"
-  >
-    <a href="{{ route('dashboard') }}">
-      <span class="logo" :class="sidebarToggle ? 'hidden' : ''">
-        <img class="dark:hidden" src="{{ asset('images/logo/logo.svg') }}" alt="Logo" />
-        <img
-          class="hidden dark:block"
-          src="{{ asset('images/logo/logo-dark.svg') }}"
-          alt="Logo"
-        />
-      </span>
-
+<!-- SIDEBAR HEADER -->
+<div
+  :class="sidebarToggle ? 'justify-center' : 'justify-between'"
+  class="sidebar-header flex items-center gap-2 pb-7 pt-8"
+>
+  <a href="{{ route('dashboard') }}">
+    <span class="logo" :class="sidebarToggle ? 'hidden' : ''">
+      <!-- Set max width / height for the logo -->
+      <img class="dark:hidden w-20 h-auto" src="{{ asset('images/logo/logo.svg') }}" alt="Logo" /> 
       <img
-        class="logo-icon"
-        :class="sidebarToggle ? 'lg:block' : 'hidden'"
-        src="{{ asset('images/logo/logo-icon.svg') }}"
+        class="hidden dark:block w-20 h-auto"
+        src="{{ asset('images/logo/logo-dark.svg') }}"
         alt="Logo"
       />
-    </a>
-  </div>
-  <!-- SIDEBAR HEADER -->
+    </span>
+
+    <img
+      class="logo-icon"
+      :class="sidebarToggle ? 'lg:block' : 'hidden'"
+      src="{{ asset('images/logo/logo-icon.svg') }}"
+      alt="Logo"
+      class="w-10 h-auto"
+    />
+  </a>
+</div>
+<!-- SIDEBAR HEADER -->
 
   <div
     class="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear"

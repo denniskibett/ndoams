@@ -7,11 +7,11 @@
     </div>
     <!-- Breadcrumb End -->
 
-    @include('partials.card.pdf-card')<br />
+    @include('partials.card.main-cards', ['cardData' => $cardData])<br />
 
     {{-- @include('partials.table.pdf-uploads-table')<br /> --}}
 
-    @include('partials.table.pdf-pages-table')
+    {{-- PASS THE DATA HERE --}}
+    @include('partials.table.pdf-pages-table', ['pdfPages' => $pdfPages])
 
 @endsection
-  

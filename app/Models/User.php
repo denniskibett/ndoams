@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable
 {
@@ -35,43 +37,176 @@ class User extends Authenticatable
         'social' => 'array',
     ];
 
-    public function role()
+    /**
+     * Get the role that belongs to the user
+     */
+    public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
     }
-    
 
-    public function isAdmin()
-    {
-        return $this->role && $this->role->name === 'admin';
-    }
-
-    public function IsRegistrar()
+    /**
+     * Get marriages where user is the registrar
+     */
+    public function marriagesAsRegistrar(): HasMany
     {
         return $this->hasMany(Marriage::class, 'marriage_registrar_id');
     }
 
-
-    public function uploadedImages()
+    /**
+     * Get uploaded images
+     */
+    public function uploadedImages(): HasMany
     {
-        return $this->hasMany(Image::class, 'uploaded_by'); 
-        // assuming your images table has `uploaded_by` column referencing users.id
+        return $this->hasMany(Image::class, 'uploaded_by');
     }
 
-    public function uploadedPdfs()
+    /**
+     * Get uploaded PDFs
+     */
+    public function uploadedPdfs(): HasMany
     {
-        return $this->hasMany(PdfUpload::class, 'uploaded_by'); 
-        // 'uploaded_by' is the foreign key in pdf_uploads table pointing to users.id
+        return $this->hasMany(PdfUpload::class, 'uploaded_by');
     }
 
+    /**
+     * Get PDF pages assigned to this user (for data clerks)
+     */
+    public function assignedPages(): HasMany
+    {
+        return $this->hasMany(PdfPage::class, 'assigned_to');
+    }
 
+    /**
+     * Get completed pages for this user
+     */
+    public function completedPages(): HasMany
+    {
+        return $this->hasMany(PdfPage::class, 'assigned_to')
+            ->whereIn('status', ['completed', 'review_needed']);
+    }
 
-    public function isDataClerk()
+    /**
+     * Get pending pages for this user
+     */
+    public function pendingPages(): HasMany
+    {
+        return $this->hasMany(PdfPage::class, 'assigned_to')
+            ->whereNotIn('status', ['completed', 'review_needed']);
+    }
+
+    /**
+     * Get marriages created from pages assigned to this user
+     */
+    public function marriagesFromAssignedPages(): HasMany
+    {
+        return $this->hasMany(Marriage::class, 'created_by')
+            ->whereHas('pdfPage', function($query) {
+                $query->where('assigned_to', $this->id);
+            });
+    }
+
+    /**
+     * For Marriage Teller: Get clerks managed by this teller
+     */
+    public function managedClerks()
+    {
+        return $this->belongsToMany(
+            User::class, 
+            'clerk_managements', 
+            'marriage_teller_id', 
+            'data_clerk_id'
+        )->whereHas('role', function($q) {
+            $q->where('name', 'data_clerk');
+        });
+    }
+
+    /**
+     * Get clerk management relationships where this user is the teller
+     */
+    public function clerkManagements(): HasMany
+    {
+        return $this->hasMany(ClerkManagement::class, 'marriage_teller_id');
+    }
+
+    /**
+     * Get clerk management relationships where this user is the clerk
+     */
+    public function tellerManagements(): HasMany
+    {
+        return $this->hasMany(ClerkManagement::class, 'data_clerk_id');
+    }
+
+    /**
+     * Get the teller managing this clerk (if user is a data clerk)
+     */
+    public function managingTeller()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'clerk_managements',
+            'data_clerk_id',
+            'marriage_teller_id'
+        )->whereHas('role', function($q) {
+            $q->where('name', 'marriage_teller');
+        })->first();
+    }
+
+    // ========== ROLE CHECK METHODS ==========
+
+    /**
+     * Check if user is admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role && $this->role->name === 'admin';
+    }
+
+    /**
+     * Check if user is marriage registrar
+     */
+    public function isRegistrar(): bool
+    {
+        return $this->role && $this->role->name === 'marriage_registrar';
+    }
+
+    /**
+     * Check if user is data clerk
+     */
+    public function isDataClerk(): bool
     {
         return $this->role && $this->role->name === 'data_clerk';
     }
 
-    // For query scopes (optional but useful)
+    /**
+     * Check if user is marriage teller
+     */
+    public function isTeller(): bool
+    {
+        return $this->role && $this->role->name === 'marriage_teller';
+    }
+
+    /**
+     * Check if user is attorney general
+     */
+    public function isAttorneyGeneral(): bool
+    {
+        return $this->role && in_array($this->role->name, ['attorney_general', 'ag']);
+    }
+
+    /**
+     * Get user's role name
+     */
+    public function getRoleNameAttribute(): string
+    {
+        return $this->role ? $this->role->name : 'user';
+    }
+
+    // ========== SCOPES ==========
+
+    /**
+     * Scope to get only data clerks
+     */
     public function scopeDataClerks($query)
     {
         return $query->whereHas('role', function($q) {
@@ -79,6 +214,9 @@ class User extends Authenticatable
         });
     }
 
+    /**
+     * Scope to get only marriage tellers
+     */
     public function scopeMarriageTellers($query)
     {
         return $query->whereHas('role', function($q) {
@@ -86,16 +224,94 @@ class User extends Authenticatable
         });
     }
 
-    public function isTeller()
+    /**
+     * Scope to get only marriage registrars
+     */
+    public function scopeMarriageRegistrars($query)
     {
-        return $this->role && $this->role->name === 'marriage_teller';
+        return $query->whereHas('role', function($q) {
+            $q->where('name', 'marriage_registrar');
+        });
     }
 
+    /**
+     * Scope to get only admins
+     */
+    public function scopeAdmins($query)
+    {
+        return $query->whereHas('role', function($q) {
+            $q->where('name', 'admin');
+        });
+    }
+
+    /**
+     * Scope to get active users (has activity in last 30 days)
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('last_login_at', '>=', now()->subDays(30));
+    }
+
+    // ========== PERFORMANCE METRICS ==========
+
+    /**
+     * Get completion rate for data clerk
+     */
+    public function getCompletionRateAttribute(): float
+    {
+        if (!$this->isDataClerk()) {
+            return 0;
+        }
+        
+        $assigned = $this->assignedPages()->count();
+        if ($assigned === 0) {
+            return 0;
+        }
+        
+        $completed = $this->completedPages()->count();
+        return round(($completed / $assigned) * 100, 2);
+    }
+
+    /**
+     * Get total pages assigned
+     */
+    public function getTotalAssignedPagesAttribute(): int
+    {
+        return $this->assignedPages()->count();
+    }
+
+    /**
+     * Get total completed pages
+     */
+    public function getTotalCompletedPagesAttribute(): int
+    {
+        return $this->completedPages()->count();
+    }
+
+    /**
+     * Get total pending pages
+     */
+    public function getTotalPendingPagesAttribute(): int
+    {
+        return $this->pendingPages()->count();
+    }
+
+    /**
+     * Get today's completed pages
+     */
+    public function getTodayCompletedPagesAttribute(): int
+    {
+        return $this->completedPages()
+            ->whereDate('updated_at', today())
+            ->count();
+    }
+
+    // ========== SOCIAL MEDIA METHODS ==========
 
     /**
      * Get social links with proper URLs
      */
-    public function getSocialLinksAttribute()
+    public function getSocialLinksAttribute(): array
     {
         $social = $this->social ?: [];
         
@@ -123,7 +339,7 @@ class User extends Authenticatable
     /**
      * Extract username from URL or return as-is
      */
-    public function getSocialUsernamesAttribute()
+    public function getSocialUsernamesAttribute(): array
     {
         $social = $this->social ?: [];
         $usernames = [];
@@ -138,7 +354,7 @@ class User extends Authenticatable
     /**
      * Helper to extract username from URL
      */
-    private function extractUsername($url)
+    private function extractUsername(?string $url): string
     {
         if (empty($url)) {
             return '';
@@ -183,7 +399,7 @@ class User extends Authenticatable
     /**
      * Helper to create full URL from username
      */
-    private function getSocialUrl($value, $baseUrl)
+    private function getSocialUrl(?string $value, string $baseUrl): ?string
     {
         if (empty($value)) {
             return null;
@@ -201,7 +417,7 @@ class User extends Authenticatable
     /**
      * Prepare social data for storage
      */
-    public function prepareSocialData($data)
+    public function prepareSocialData(array $data): array
     {
         $social = [];
         
@@ -228,7 +444,7 @@ class User extends Authenticatable
     /**
      * Clean username (remove @ symbol, trim)
      */
-    private function cleanUsername($username)
+    private function cleanUsername(string $username): string
     {
         return ltrim(trim($username), '@');
     }
