@@ -7,23 +7,30 @@
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
     />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Sign Up | {{ SystemHelper::appName() }}</title>
+    <title>Sign Up | {{ \App\Helpers\SystemHelper::appName() }}</title>
     
     <!-- Vite Assets -->
     @vite([
         'resources/css/app.css',
         'resources/js/app.js',
         'resources/js/bootstrap.js',
-        'resources/js/index.js'
+        'resources/js/index.js',
+        'resources/js/components/charts/chart-01.js',
+        'resources/js/components/charts/chart-02.js',
+        'resources/js/components/charts/chart-03.js'
     ])
 
     <!-- Auto-load all JS components -->
     @php
-        $components = array_diff(scandir(resource_path('js/components')), array('..', '.'));
+        // Get all JS component files
+        $components = collect(File::allFiles(resource_path('js/components')))
+            ->filter(fn($file) => $file->getExtension() === 'js')
+            ->map(fn($file) => 'resources/js/components/'.$file->getRelativePathname())
+            ->values()
+            ->all();
     @endphp
-    @foreach ($components as $component)
-        @vite(['resources/js/components/' . $component])
-    @endforeach
+
+    @vite($components)
   </head>
   <body
     x-data="{ page: 'comingSoon', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false }"
@@ -168,6 +175,38 @@
                     @enderror
                   </div>
                 </div>
+                <!-- Role -->
+<div class="sm:col-span-2">
+  <label
+    for="role_id"
+    class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
+  >
+    Role<span class="text-error-500">*</span>
+  </label>
+
+  <select
+    id="role_id"
+    name="role_id"
+    required
+    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-none focus:ring focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+  >
+    <option value="">Select a role</option>
+
+    @foreach ($roles as $role)
+      <option
+        value="{{ $role->id }}"
+        {{ old('role_id') == $role->id ? 'selected' : '' }}
+      >
+        {{ ucfirst($role->name) }}
+      </option>
+    @endforeach
+  </select>
+
+  @error('role_id')
+    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+  @enderror
+</div>
+
                 <!-- Password -->
                 <div>
                   <label
@@ -376,10 +415,10 @@
         <!-- ===== Common Grid Shape End ===== -->
         <div class="flex max-w-xs flex-col items-center">
           <a href="{{ route('dashboard') }}" class="mb-4 block">
-            <img src="{{ SystemHelper::authLogoUrl() }}" alt="{{ SystemHelper::appName() }}" />
+            <img src="{{ \App\Helpers\SystemHelper::authLogoUrl() }}" alt="{{ \App\Helpers\SystemHelper::appName() }}" />
           </a>
           <p class="text-center text-gray-400 dark:text-white/60">
-            {{ SystemHelper::slogan() }}
+            {{ \App\Helpers\SystemHelper::slogan() }}
           </p>
         </div>
       </div>

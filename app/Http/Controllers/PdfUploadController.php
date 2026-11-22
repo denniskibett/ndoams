@@ -650,6 +650,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Upload base64 encoded chunks for large files.
+     */
     public function uploadBase64Chunk(Request $request)
     {
         try {
@@ -752,6 +755,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Assemble base64 chunks into a complete PDF file.
+     */
     private function assembleBase64Chunks($request, $uploadId, $originalName)
     {
         try {
@@ -941,6 +947,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Create PDF page records for a PDF upload.
+     */
     private function createPdfPages(PdfUpload $pdfUpload, $pageCount)
     {
         $pages = [];
@@ -957,6 +966,9 @@ class PdfUploadController extends Controller
         DB::table('pdf_pages')->insert($pages);
     }
 
+    /**
+     * Display the specified PDF page.
+     */
     public function show($id, Request $request)
     {
         $pdfPage = PdfPage::with([
@@ -1064,6 +1076,7 @@ class PdfUploadController extends Controller
             'DECEASED'
         ];
         
+        // Get system colors from helper
         $primaryColor = SystemHelper::primaryColor();
         $secondaryColor = SystemHelper::secondaryColor();
         
@@ -1088,6 +1101,9 @@ class PdfUploadController extends Controller
         ));
     }
 
+    /**
+     * Get page data as JSON.
+     */
     public function getPageData(PdfUpload $pdfUpload, $pageNumber)
     {
         $page = $pdfUpload->pages()->where('page_number', $pageNumber)->firstOrFail();
@@ -1105,6 +1121,9 @@ class PdfUploadController extends Controller
         ]);
     }
 
+    /**
+     * Show a specific page of a PDF.
+     */
     public function showPage(PdfUpload $pdfUpload, $pageNumber)
     {
         $page = $pdfUpload->pages()->where('page_number', $pageNumber)->firstOrFail();
@@ -1126,6 +1145,9 @@ class PdfUploadController extends Controller
         return view('pdf-uploads.page', compact('pdfUpload', 'page', 'pageContent', 'marriage', 'constants'));
     }
 
+    /**
+     * Extract page for display - tries image first, falls back to PDF.
+     */
     private function extractPageForDisplay(PdfUpload $pdfUpload, $pageNumber)
     {
         try {
@@ -1151,6 +1173,8 @@ class PdfUploadController extends Controller
             }
             
             $imagick = new \Imagick();
+            
+            // Set resolution for better quality
             $imagick->setResolution(150, 150);
             $imagick->readImage($pdfPath . '[' . ($pageNumber - 1) . ']');
             
@@ -1171,6 +1195,8 @@ class PdfUploadController extends Controller
             $imagick->setImageCompression(\Imagick::COMPRESSION_JPEG);
             $imagick->setImageCompressionQuality(85);
             $imagick->setImageBackgroundColor('white');
+            
+            // Flatten layers (removes transparency)
             $imagick = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
             
             $imageBlob = $imagick->getImageBlob();
@@ -1190,6 +1216,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Extract page as PDF for embedding.
+     */
     private function extractPageAsPdf(PdfUpload $pdfUpload, $pageNumber)
     {
         try {
@@ -1234,6 +1263,9 @@ class PdfUploadController extends Controller
         return view('pdf-uploads.edit', compact('pdfUpload', 'counties', 'months'));
     }
 
+    /**
+     * Update the specified PDF upload in storage.
+     */
     public function update(Request $request, PdfUpload $pdfUpload)
     {
         $request->validate([
@@ -1334,6 +1366,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Remove the specified PDF upload from storage.
+     */
     public function destroy(PdfUpload $pdfUpload)
     {
         try {
@@ -1362,6 +1397,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Download the PDF file.
+     */
     public function download(PdfUpload $pdfUpload)
     {
         if (!Storage::disk('public')->exists($pdfUpload->storage_path)) {
@@ -1371,6 +1409,9 @@ class PdfUploadController extends Controller
         return Storage::disk('public')->download($pdfUpload->storage_path, $pdfUpload->name);
     }
 
+    /**
+     * Preview the PDF file in browser.
+     */
     public function preview(PdfUpload $pdfUpload)
     {
         if (!Storage::disk('public')->exists($pdfUpload->storage_path)) {
@@ -1386,6 +1427,9 @@ class PdfUploadController extends Controller
         ]);
     }
 
+    /**
+     * Get thumbnail for PDF.
+     */
     public function thumbnail(PdfUpload $pdfUpload)
     {
         if ($pdfUpload->thumbnail_path && Storage::disk('public')->exists($pdfUpload->thumbnail_path)) {
@@ -1554,6 +1598,9 @@ class PdfUploadController extends Controller
         return $stats;
     }
 
+    /**
+     * Get storage usage as formatted string.
+     */
     private function getStorageRecorded()
     {
         $totalStorageBytes = PdfUpload::sum('file_size');
@@ -1593,6 +1640,9 @@ class PdfUploadController extends Controller
         }
     }
     
+    /**
+     * Get page count from file path.
+     */
     private function getPdfPageCountFromPath($filePath)
     {
         try {
@@ -1648,6 +1698,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Create placeholder thumbnail when Imagick fails.
+     */
     private function createPlaceholderThumbnail($pdfUpload)
     {
         try {
@@ -1670,6 +1723,9 @@ class PdfUploadController extends Controller
         }
     }
     
+    /**
+     * Format bytes to human readable format.
+     */
     private function formatBytes($bytes, $precision = 2)
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -1681,6 +1737,9 @@ class PdfUploadController extends Controller
         return round($bytes, $precision) . ' ' . $units[$pow];
     }
     
+    /**
+     * Get list of months.
+     */
     private function getMonthsList()
     {
         return [
@@ -1691,6 +1750,9 @@ class PdfUploadController extends Controller
         ];
     }
     
+    /**
+     * Get statistics for dashboard.
+     */
     public function getStatistics()
     {
         $cardData = $this->getOverviewCardData();
@@ -1720,6 +1782,9 @@ class PdfUploadController extends Controller
         ]);
     }
 
+    /**
+     * Bulk update PDF uploads.
+     */
     public function bulkUpdate(Request $request)
     {
         $request->validate([
@@ -1757,6 +1822,9 @@ class PdfUploadController extends Controller
         return view('pdf-uploads.user-uploads', compact('user', 'uploads', 'userStats'));
     }
     
+    /**
+     * Calculate average completion for a user.
+     */
     private function calculateUserAverageCompletion($userId)
     {
         $pdfs = PdfUpload::where('uploaded_by', $userId)->get();
@@ -1773,6 +1841,9 @@ class PdfUploadController extends Controller
         return round($totalCompletion / $pdfs->count(), 1);
     }
 
+    /**
+     * Save quick data for a page.
+     */
     public function saveQuickData(Request $request, PdfPage $page)
     {
         $validated = $request->validate([
@@ -1791,6 +1862,9 @@ class PdfUploadController extends Controller
         ]);
     }
 
+    /**
+     * Show linked marriages for a PDF.
+     */
     public function showLinkedMarriages(PdfUpload $pdfUpload)
     {
         $marriagesViaPdfId = $pdfUpload->marriages()->with(['spouses', 'witnesses', 'createdBy'])->get();
@@ -1813,6 +1887,9 @@ class PdfUploadController extends Controller
         return view('pdf-uploads.linked-marriages', compact('pdfUpload', 'allMarriages', 'stats'));
     }
 
+    /**
+     * Show relationships for a PDF.
+     */
     public function showRelationships(PdfUpload $pdfUpload)
     {
         $pdfUpload->load([
@@ -1853,6 +1930,9 @@ class PdfUploadController extends Controller
         ));
     }
 
+    /**
+     * Show all relationships with filters.
+     */
     public function showAllRelationships(Request $request)
     {
         $query = PdfUpload::withCount([
@@ -2205,6 +2285,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Quick update marriage.
+     */
     public function quickUpdate(Request $request, Marriage $marriage)
     {
         $user = Auth::user();
@@ -2279,6 +2362,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Assign page to current user.
+     */
     public function assignPage(PdfPage $page)
     {
         if ($page->status !== 'pending') {
@@ -2298,6 +2384,9 @@ class PdfUploadController extends Controller
         ]);
     }
 
+    /**
+     * Mark page as completed.
+     */
     public function completePage(Request $request, PdfPage $page)
     {
         if ($page->assigned_to !== auth()->id()) {

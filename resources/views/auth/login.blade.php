@@ -7,7 +7,7 @@
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
     />
       <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-      <title>Sign In | {{ SystemHelper::appName() }}</title>
+      <title>Sign In | {{ \App\Helpers\SystemHelper::appName() }}</title>
     
     <!-- Vite Assets -->
     @vite([
@@ -19,11 +19,15 @@
 
     <!-- Auto-load all JS components -->
     @php
-        $components = array_diff(scandir(resource_path('js/components')), array('..', '.'));
+        // Get all JS component files
+        $components = collect(File::allFiles(resource_path('js/components')))
+            ->filter(fn($file) => $file->getExtension() === 'js')
+            ->map(fn($file) => 'resources/js/components/'.$file->getRelativePathname())
+            ->values()
+            ->all();
     @endphp
-    @foreach ($components as $component)
-        @vite(['resources/js/components/' . $component])
-    @endforeach
+
+    @vite($components)
   </head>
   <body
     x-data="{ page: 'comingSoon', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false }"
@@ -319,10 +323,10 @@
         <!-- ===== Common Grid Shape End ===== -->
         <div class="flex max-w-xs flex-col items-center">
           <a href="{{ route('dashboard') }}" class="mb-4 block">
-            <img src="{{ SystemHelper::authLogoUrl() ?? asset('images/logo/auth-logo.svg') }}" alt="Logo" />
+            <img src="{{ \App\Helpers\SystemHelper::authLogoUrl() ?? asset('images/logo/auth-logo.svg') }}" alt="Logo" />
           </a>
           <p class="text-center text-gray-400 dark:text-white/60">
-            {{ SystemHelper::slogan() }}
+            {{ \App\Helpers\SystemHelper::slogan() }}
           </p>
         </div>
       </div>

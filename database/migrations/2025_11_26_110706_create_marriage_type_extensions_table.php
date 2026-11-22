@@ -6,11 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('marriage_type_extensions', function (Blueprint $table) {
+        Schema::create('marriage_type_extensions', function(Blueprint $table){
             $table->id();
-            $table->foreignId('marriage_id')->constrained()->onDelete('cascade');
+            $table->foreignId('marriage_id')->constrained('marriages');
             $table->string('mahr_agreed')->nullable();
             $table->string('mahr_paid')->nullable();
             $table->string('mahr_deferred')->nullable();
@@ -26,8 +29,12 @@ return new class extends Migration
             $table->uuid('verified_by')->nullable();
             $table->timestamps();
         });
+
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('marriage_type_extensions');

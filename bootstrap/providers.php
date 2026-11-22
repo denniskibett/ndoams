@@ -2,5 +2,7 @@
 
 return [
     App\Providers\AppServiceProvider::class,
+    App\Providers\AuthServiceProvider::class,
     App\Providers\SystemServiceProvider::class,
+    App\SecurityKit\SecurityKitServiceProvider::class,
 ];

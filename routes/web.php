@@ -11,6 +11,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\PdfUploadController;
 use App\Http\Controllers\ClerkManagementController;
+use App\Http\Controllers\EarningsController;
 use App\Http\Controllers\Admin\SystemController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\PasswordController;
@@ -100,6 +101,10 @@ Route::middleware('auth')->group(function () {
     // -------- USER MANAGEMENT --------
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole'])->name('users.assign-role');
+
+    // -------- EARNINGS --------
+    Route::get('/earnings', [EarningsController::class, 'index'])->name('earnings.index');
+    Route::get('/earnings/{user}', [EarningsController::class, 'show'])->name('earnings.show');
 
     // -------- CLERK MANAGEMENT --------
     Route::prefix('clerk-management')->name('clerk-management.')->group(function () {
@@ -240,5 +245,4 @@ Route::prefix('api')->middleware('auth')->group(function () {
     Route::post('/marriages/{marriage}/review', [PdfUploadController::class, 'reviewMarriage'])->name('marriages.review')->middleware('auth');
     Route::post('/pdf-pages/{page}/update-status', [PdfUploadController::class, 'updatePageStatus'])->name('pdf-pages.update-status')->middleware('auth');
 
-    Route::post('/marriages/{marriage}/review', [PdfUploadController::class, 'reviewMarriage'])->name('marriages.review')->middleware('auth');
 });
