@@ -448,6 +448,7 @@
                 <div class="col-span-1 flex items-center px-2 py-3">
                     <p class="text-xs font-medium text-gray-700 dark:text-gray-400">Actions</p>
                 </div>
+                <span class="text-sm text-gray-500 whitespace-nowrap dark:text-gray-400">entries</span>
             </div>
             <!-- Table Header End -->
 

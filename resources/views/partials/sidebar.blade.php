@@ -6,6 +6,7 @@ window.menuPermissions = {
     'marriage_teller': ['dashboard', 'marriages', 'clerks', 'pdfs'],
     'user': ['dashboard','pdfs', 'images', 'charts'],
     'attorney_general': ['dashboard','pdfs', 'marriages', 'charts'],
+    'ag': ['dashboard','pdfs', 'marriages', 'charts'],
     'admin': ['dashboard','pdfs', 'images', 'marriages', 'spouses', 'witnesses', 'clerks', 'users'],
     
 };
@@ -185,6 +186,41 @@ window.menuPermissions = {
             </a>
           </li>
           <!-- Menu Item Marriages -->
+
+          <!-- Menu Item Users -->
+          @if(auth()->user()?->isAdmin())
+          <li>
+            <a href="{{ route('users.index') }}"
+               class="menu-item group {{ request()->routeIs('users.*') ? 'menu-item-active' : 'menu-item-inactive' }}">
+              <svg class="{{ request()->routeIs('users.*') ? 'menu-item-icon-active' : 'menu-item-icon-inactive' }}" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="9" cy="8" r="3.25" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M3.75 19C3.75 15.8244 6.09886 13.75 9 13.75C11.9011 13.75 14.25 15.8244 14.25 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M15.5 5.25C16.9 5.6 17.75 6.7 17.75 8C17.75 9.3 16.9 10.4 15.5 10.75M17.5 13.9C19.1 14.5 20.25 16.2 20.25 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span class="menu-item-text" :class="sidebarToggle ? 'lg:hidden' : ''">Users</span>
+            </a>
+          </li>
+          @endif
+          <!-- Menu Item Users -->
+
+          <!-- Menu Item Earnings -->
+          @if(auth()->user()?->isAdmin() || in_array(auth()->user()?->role?->name, config('earnings.earning_roles', [])))
+          <li>
+            <a
+              href="{{ route('earnings.index') }}"
+              class="menu-item group {{ request()->routeIs('earnings.*') ? 'menu-item-active' : 'menu-item-inactive' }}"
+            >
+              <svg class="{{ request()->routeIs('earnings.*') ? 'menu-item-icon-active' : 'menu-item-icon-inactive' }}" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 7.5C3 6.67157 3.67157 6 4.5 6H19.5C20.3284 6 21 6.67157 21 7.5V16.5C21 17.3284 20.3284 18 19.5 18H4.5C3.67157 18 3 17.3284 3 16.5V7.5Z" stroke="currentColor" stroke-width="1.5"/>
+                <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+              <span class="menu-item-text" :class="sidebarToggle ? 'lg:hidden' : ''">
+                {{ auth()->user()?->isAdmin() ? 'Earnings' : 'My Earnings' }}
+              </span>
+            </a>
+          </li>
+          @endif
+          <!-- Menu Item Earnings -->
 
           <!-- Menu Item Clerks -->
           <li x-show="hasPermission('clerks')">

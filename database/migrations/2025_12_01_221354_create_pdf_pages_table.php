@@ -7,6 +7,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Already exists on the live server (built from an SQL dump); skip there.
+        if (Schema::hasTable('pdf_pages')) {
+            return;
+        }
+
         Schema::create('pdf_pages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('pdf_upload_id')->constrained('pdf_uploads')->onDelete('cascade');

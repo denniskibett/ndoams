@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('roles', function(Blueprint $table){
             $table->id();
             $table->string('name'); // capture, detailed_entry, registrar, business_owner
-            $table->string('slug'); 
             $table->text('description');
             $table->timestamps();
         });

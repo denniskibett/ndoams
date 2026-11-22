@@ -11,14 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Already exists on the live server (built from an SQL dump); skip there.
+        if (Schema::hasTable('counties')) {
+            return;
+        }
+
         Schema::create('counties', function (Blueprint $table) {
-            $table->id(); // auto increments
-            $table->integer('county_code')->unique();
-            $table->string('name', 512)->nullable();
-            $table->string('constituency', 512)->nullable();
-            $table->string('wards', 512)->nullable();
-            $table->timestamps();
-        });
+        $table->id(); // auto increments
+        $table->string('county_code', 10);
+        $table->string('name');
+        $table->string('constituency', 512)->nullable();
+        $table->string('wards', 512)->nullable();
+        $table->timestamps();
+    });
     }
 
     /**

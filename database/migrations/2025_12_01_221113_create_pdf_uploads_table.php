@@ -11,20 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Already exists on the live server (built from an SQL dump); skip there.
+        if (Schema::hasTable('pdf_uploads')) {
+            return;
+        }
+
         Schema::create('pdf_uploads', function (Blueprint $table) {
             $table->id(); // Auto-increment primary key
             $table->uuid('uuid')->unique();
+            $table->foreignId('marriage_type_id')->nullable()->constrained('categories')->nullOnDelete();
             $table->integer('year');
-            $table->tinyInteger('month'); // 1-12
+            $table->unsignedTinyInteger('month'); // 1-12
             $table->string('county_code', 20);
             $table->string('filename');      // internal filename
             $table->integer('file_size');    // in bytes
             $table->string('name');          // original name
-            $table->string('storage_path');  // e.g., pdf-uploads/2025/12/filename.pdf
+            $table->string('storage_path', 500)->nullable();  // e.g., pdf-uploads/2025/12/filename.pdf
             $table->integer('total_pages')->default(1);
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->string('status', 20)->nullable()->default('pending');
             $table->foreignId('uploaded_by')->constrained('users')->cascadeOnDelete();
-            $table->timestamps(); 
+            $table->timestamps();
+            $table->softDeletes();
+            $table->string('file_hash', 64)->index();
         });
     }
 

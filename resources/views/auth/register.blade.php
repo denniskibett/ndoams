@@ -7,23 +7,30 @@
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
     />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Sign Up | {{ SystemHelper::appName() }}</title>
+    <title>Sign Up | {{ \App\Helpers\SystemHelper::appName() }}</title>
     
     <!-- Vite Assets -->
     @vite([
         'resources/css/app.css',
         'resources/js/app.js',
         'resources/js/bootstrap.js',
-        'resources/js/index.js'
+        'resources/js/index.js',
+        'resources/js/components/charts/chart-01.js',
+        'resources/js/components/charts/chart-02.js',
+        'resources/js/components/charts/chart-03.js'
     ])
 
     <!-- Auto-load all JS components -->
     @php
-        $components = array_diff(scandir(resource_path('js/components')), array('..', '.'));
+        // Get all JS component files
+        $components = collect(File::allFiles(resource_path('js/components')))
+            ->filter(fn($file) => $file->getExtension() === 'js')
+            ->map(fn($file) => 'resources/js/components/'.$file->getRelativePathname())
+            ->values()
+            ->all();
     @endphp
-    @foreach ($components as $component)
-        @vite(['resources/js/components/' . $component])
-    @endforeach
+
+    @vite($components)
   </head>
   <body
     x-data="{ page: 'comingSoon', 'loaded': true, 'darkMode': false, 'stickyMenu': false, 'sidebarToggle': false, 'scrollTop': false }"
@@ -376,10 +383,10 @@
         <!-- ===== Common Grid Shape End ===== -->
         <div class="flex max-w-xs flex-col items-center">
           <a href="{{ route('dashboard') }}" class="mb-4 block">
-            <img src="{{ SystemHelper::authLogoUrl() }}" alt="{{ SystemHelper::appName() }}" />
+            <img src="{{ \App\Helpers\SystemHelper::authLogoUrl() }}" alt="{{ \App\Helpers\SystemHelper::appName() }}" />
           </a>
           <p class="text-center text-gray-400 dark:text-white/60">
-            {{ SystemHelper::slogan() }}
+            {{ \App\Helpers\SystemHelper::slogan() }}
           </p>
         </div>
       </div>
