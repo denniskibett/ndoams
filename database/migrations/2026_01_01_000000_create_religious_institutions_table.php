@@ -8,6 +8,11 @@ class CreateReligiousInstitutionsTable extends Migration
 {
     public function up()
     {
+        // Already exists on the live server (built from an SQL dump); skip there.
+        if (Schema::hasTable('religious_institutions')) {
+            return;
+        }
+
         Schema::create('religious_institutions', function (Blueprint $table) {
             $table->id();
             $table->string('registered_name');

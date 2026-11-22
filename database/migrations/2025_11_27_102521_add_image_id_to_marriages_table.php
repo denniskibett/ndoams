@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up()
     {
+        if (Schema::hasColumn('marriages', 'image_id')) {
+            return;
+        }
+
         Schema::table('marriages', function (Blueprint $table) {
             $table->foreignId('image_id')->nullable()->after('id')->constrained('images');
         });

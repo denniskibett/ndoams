@@ -12,6 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Already exists on the live server (built from an SQL dump); skip there.
+        if (Schema::hasTable('system')) {
+            return;
+        }
+
         Schema::create('system', function (Blueprint $table) {
             $table->id();
             $table->string('name')->nullable()->comment('System/Company name');

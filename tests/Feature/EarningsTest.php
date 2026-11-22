@@ -4,64 +4,18 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Services\EarningsCalculator;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class EarningsTest extends TestCase
 {
-    // The live migrations can't build a fresh database (the live DB came from
-    // a dump), so build only the tables these tests touch.
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->withoutVite();
-
-        Schema::create('roles', function (Blueprint $t) {
-            $t->id();
-            $t->string('name');
-            $t->timestamps();
-        });
-        Schema::create('users', function (Blueprint $t) {
-            $t->id();
-            $t->string('name');
-            $t->string('email')->unique();
-            $t->timestamp('email_verified_at')->nullable();
-            $t->string('password');
-            $t->rememberToken();
-            $t->foreignId('role_id')->nullable();
-            foreach (['phone', 'bio', 'avatar', 'country', 'city'] as $c) {
-                $t->string($c)->nullable();
-            }
-            $t->timestamps();
-        });
-        Schema::create('system', function (Blueprint $t) {
-            $t->id();
-            foreach ([
-                'name', 'logo', 'favicon', 'slogan', 'timezone', 'date_format', 'time_format',
-                'currency', 'currency_symbol', 'primary_color', 'secondary_color', 'contact_email',
-                'contact_phone', 'address', 'meta_description', 'meta_keywords', 'facebook_url',
-                'twitter_url', 'instagram_url', 'linkedin_url', 'pagination_limit', 'custom_css',
-                'custom_js', 'settings',
-            ] as $c) {
-                $t->text($c)->nullable();
-            }
-            $t->boolean('maintenance_mode')->default(false);
-            $t->timestamps();
-        });
-        Schema::create('marriages', function (Blueprint $t) {
-            $t->id();
-            $t->foreignId('created_by')->nullable();
-            $t->string('system_status')->nullable();
-            $t->timestamps();
-        });
-    }
+    use RefreshDatabase;
 
     private function role(string $name): int
     {
         return DB::table('roles')->where('name', $name)->value('id')
-            ?? DB::table('roles')->insertGetId(['name' => $name]);
+            ?? DB::table('roles')->insertGetId(['name' => $name, 'description' => $name]);
     }
 
     private function userWithRole(string $role): User

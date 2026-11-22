@@ -9,8 +9,12 @@ return new class extends Migration
     public function up()
     {
         Schema::table('images', function (Blueprint $table) {
-            $table->foreignId('updated_by')->nullable()->after('uploaded_by')->constrained('users');
-            $table->string('certificate_serial')->nullable()->after('filename');
+            if (! Schema::hasColumn('images', 'updated_by')) {
+                $table->foreignId('updated_by')->nullable()->after('uploaded_by')->constrained('users');
+            }
+            if (! Schema::hasColumn('images', 'certificate_serial')) {
+                $table->string('certificate_serial')->nullable()->after('filename');
+            }
         });
     }
 
