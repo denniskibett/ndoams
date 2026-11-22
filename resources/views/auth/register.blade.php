@@ -175,38 +175,6 @@
                     @enderror
                   </div>
                 </div>
-                <!-- Role -->
-<div class="sm:col-span-2">
-  <label
-    for="role_id"
-    class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
-  >
-    Role<span class="text-error-500">*</span>
-  </label>
-
-  <select
-    id="role_id"
-    name="role_id"
-    required
-    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-none focus:ring focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
-  >
-    <option value="">Select a role</option>
-
-    @foreach ($roles as $role)
-      <option
-        value="{{ $role->id }}"
-        {{ old('role_id') == $role->id ? 'selected' : '' }}
-      >
-        {{ ucfirst($role->name) }}
-      </option>
-    @endforeach
-  </select>
-
-  @error('role_id')
-    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-  @enderror
-</div>
-
                 <!-- Password -->
                 <div>
                   <label

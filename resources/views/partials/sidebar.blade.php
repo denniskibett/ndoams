@@ -187,6 +187,22 @@ window.menuPermissions = {
           </li>
           <!-- Menu Item Marriages -->
 
+          <!-- Menu Item Users -->
+          @if(auth()->user()?->isAdmin())
+          <li>
+            <a href="{{ route('users.index') }}"
+               class="menu-item group {{ request()->routeIs('users.*') ? 'menu-item-active' : 'menu-item-inactive' }}">
+              <svg class="{{ request()->routeIs('users.*') ? 'menu-item-icon-active' : 'menu-item-icon-inactive' }}" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="9" cy="8" r="3.25" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M3.75 19C3.75 15.8244 6.09886 13.75 9 13.75C11.9011 13.75 14.25 15.8244 14.25 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M15.5 5.25C16.9 5.6 17.75 6.7 17.75 8C17.75 9.3 16.9 10.4 15.5 10.75M17.5 13.9C19.1 14.5 20.25 16.2 20.25 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span class="menu-item-text" :class="sidebarToggle ? 'lg:hidden' : ''">Users</span>
+            </a>
+          </li>
+          @endif
+          <!-- Menu Item Users -->
+
           <!-- Menu Item Earnings -->
           @if(auth()->user()?->isAdmin() || in_array(auth()->user()?->role?->name, config('earnings.earning_roles', [])))
           <li>

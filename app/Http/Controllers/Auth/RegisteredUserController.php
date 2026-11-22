@@ -22,9 +22,7 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register', [
-            'roles' => Role::orderBy('name')->get(),
-        ]);
+        return view('auth.register');
     }
     
 
@@ -39,14 +37,15 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role_id' => ['required', 'exists:roles,id'],
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role_id' => $request->role_id,
+            // Never trust a role from the sign-up form: everyone starts as a
+            // basic user and an admin promotes them on the Users page.
+            'role_id' => Role::firstOrCreate(['name' => 'user'], ['description' => 'Regular user'])->id,
         ]);
 
         event(new Registered($user));
