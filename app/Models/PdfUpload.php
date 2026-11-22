@@ -157,7 +157,7 @@ class PdfUpload extends Model
             return 'Month ' . $this->month;
         }
     }
-
+    
     public function pdfPages()
     {
         return $this->hasMany(PdfPage::class);

@@ -789,69 +789,80 @@
 >
     <!-- Table Controls -->
     <div class="mb-4 px-4">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <!-- Left Controls -->
-            <div class="flex flex-wrap items-center gap-3">
-                <!-- Show Entries -->
-                <div class="flex items-center gap-2">
-                    <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">Show</span>
-                    <div class="relative z-20 bg-transparent w-20">
-                        <select
-                            x-model="perPage"
-                            @change="currentPage = 1; applyFilters()"
-                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none py-2 pr-8 pl-3 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                        >
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                        <span class="absolute top-1/2 right-2 z-30 -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                            <svg class="stroke-current" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3.8335 5.9165L8.00016 10.0832L12.1668 5.9165" stroke="" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </span>
-                    </div>
-                    <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">entries</span>
+        <!-- Main wrapper with horizontal scroll on mobile, normal on desktop -->
+        <div class="flex flex-nowrap items-start gap-4 overflow-x-auto pb-2 lg:overflow-visible lg:flex-row lg:items-center lg:justify-between">
+            <!-- Left Controls - Show Entries -->
+            <div class="flex shrink-0 items-center gap-2">
+                <span class="text-sm text-gray-500 whitespace-nowrap dark:text-gray-400">Show</span>
+                <div class="relative w-20">
+                    <select
+                        x-model="perPage"
+                        @change="currentPage = 1; applyFilters()"
+                        class="h-10 bg-none w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-2 pr-8 text-sm text-gray-800 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                    >
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <!-- Single dropdown arrow -->
+                    <span class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none">
+                        <svg class="stroke-current" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M3.8335 5.9165L8.00016 10.0832L12.1668 5.9165" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
                 </div>
+                <span class="text-sm text-gray-500 whitespace-nowrap dark:text-gray-400">entries</span>
             </div>
 
-            <!-- Center Controls - Filters -->
-            <div class="flex flex-wrap items-center gap-2 justify-center">
-                <!-- Year Filter -->
-                <div class="relative z-20 bg-transparent w-32">
+            <!-- Center Controls - Filters (progressive hiding) -->
+            <div class="flex shrink-0 items-center gap-2">
+                <!-- Year Filter - Always visible -->
+                <div class="relative w-28">
                     <select
                         x-model="filterYear"
                         @change="currentPage = 1; applyFilters()"
-                        class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none py-2 pr-8 pl-3 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
+                        class="h-10 bg-none w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-2 pr-8 text-sm text-gray-800 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                     >
                         <option value="">All Years</option>
                         @foreach($years as $year)
                             <option value="{{ $year }}">{{ $year }}</option>
                         @endforeach
                     </select>
+                    <!-- Single dropdown arrow -->
+                    <span class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none">
+                        <svg class="stroke-current" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M3.8335 5.9165L8.00016 10.0832L12.1668 5.9165" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
                 </div>
 
-                <!-- Month Filter -->
-                <div class="relative z-20 bg-transparent w-36">
+                <!-- Month Filter - Always visible -->
+                <div class="relative w-32">
                     <select
                         x-model="filterMonth"
                         @change="currentPage = 1; applyFilters()"
-                        class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none py-2 pr-8 pl-3 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
+                        class="h-10 bg-none w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-2 pr-8 text-sm text-gray-800 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                     >
                         <option value="">All Months</option>
                         @foreach($months as $key => $month)
                             <option value="{{ $key }}">{{ $month }}</option>
                         @endforeach
                     </select>
+                    <!-- Single dropdown arrow -->
+                    <span class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none">
+                        <svg class="stroke-current" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M3.8335 5.9165L8.00016 10.0832L12.1668 5.9165" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
                 </div>
 
-                <!-- County Filter -->
-                <div class="relative z-20 bg-transparent w-40">
+                <!-- County Filter - Hidden below md -->
+                <div class="relative w-36 hidden md:block">
                     <select
                         x-model="filterCounty"
                         @change="currentPage = 1; applyFilters()"
-                        class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none py-2 pr-8 pl-3 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
+                        class="h-10 bg-none w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-2 pr-8 text-sm text-gray-800 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                     >
                         <option value="">All Counties</option>
                         @foreach($counties as $county)
@@ -860,14 +871,20 @@
                             </option>
                         @endforeach
                     </select>
+                    <!-- Single dropdown arrow -->
+                    <span class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none">
+                        <svg class="stroke-current" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M3.8335 5.9165L8.00016 10.0832L12.1668 5.9165" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
                 </div>
 
-                <!-- Status Filter -->
-                <div class="relative z-20 bg-transparent w-40">
+                <!-- Status Filter - Hidden below lg -->
+                <div class="relative w-36 hidden lg:block">
                     <select
                         x-model="filterStatus"
                         @change="currentPage = 1; applyFilters()"
-                        class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none py-2 pr-8 pl-3 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
+                        class="h-10 bg-none w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-2 pr-8 text-sm text-gray-800 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                     >
                         <option value="">All Status</option>
                         <!-- PDF Upload Statuses -->
@@ -880,24 +897,35 @@
                         <option value="pending">Pending</option>
                         <option value="assigned">Assigned</option>
                         <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
                         <option value="review_needed">Review Needed</option>
                         <option value="skipped">Skipped</option>
                     </select>
+                    <!-- Single dropdown arrow -->
+                    <span class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none">
+                        <svg class="stroke-current" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M3.8335 5.9165L8.00016 10.0832L12.1668 5.9165" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
                 </div>
 
-                <!-- Marriage Type Filter -->
-                <div class="relative z-20 bg-transparent w-36">
+                <!-- Marriage Type Filter - Hidden below xl -->
+                <div class="relative w-32 hidden xl:block">
                     <select
                         x-model="filterMarriageType"
                         @change="currentPage = 1; applyFilters()"
-                        class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none py-2 pr-8 pl-3 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                        class="h-10 bg-none w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-2 pr-8 text-sm text-gray-800 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                     >
                         <option value="">All Types</option>
                         @foreach($marriageTypes as $type)
                             <option value="{{ $type->id }}">{{ $type->name }}</option>
                         @endforeach
                     </select>
+                    <!-- Single dropdown arrow -->
+                    <span class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none">
+                        <svg class="stroke-current" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M3.8335 5.9165L8.00016 10.0832L12.1668 5.9165" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
                 </div>
 
                 <!-- Clear Filters Button -->
@@ -905,38 +933,38 @@
                     @click="clearFilters()"
                     x-show="hasActiveFilters"
                     x-cloak
-                    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 whitespace-nowrap"
+                    class="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 whitespace-nowrap"
                 >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
-                    Clear Filters
+                    Clear
                 </button>
             </div>
 
             <!-- Right Controls - Search and Create -->
-            <div class="flex flex-wrap items-center gap-3">
+            <div class="flex shrink-0 items-center gap-3">
                 <!-- Search -->
-                <div class="relative w-full lg:w-64">
-                    <button class="absolute top-1/2 left-4 -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                        <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <div class="relative w-64">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                        <svg class="fill-current" width="18" height="18" viewBox="0 0 20 20" fill="none">
                             <path fill-rule="evenodd" clip-rule="evenodd" 
-                                  d="M3.04199 9.37363C3.04199 5.87693 5.87735 3.04199 9.37533 3.04199C12.8733 3.04199 15.7087 5.87693 15.7087 9.37363C15.7087 12.8703 12.8733 15.7053 9.37533 15.7053C5.87735 15.7053 3.04199 12.8703 3.04199 9.37363ZM9.37533 1.54199C5.04926 1.54199 1.54199 5.04817 1.54199 9.37363C1.54199 13.6991 5.04926 17.2053 9.37533 17.2053C11.2676 17.2053 13.0032 16.5344 14.3572 15.4176L17.1773 18.238C17.4702 18.5309 17.945 18.5309 18.2379 18.238C18.5308 17.9451 18.5309 17.4703 18.238 17.1773L15.4182 14.3573C16.5367 13.0033 17.2087 11.2669 17.2087 9.37363C17.2087 5.04817 13.7014 1.54199 9.37533 1.54199Z" 
-                                  fill=""/>
+                                d="M3.04199 9.37363C3.04199 5.87693 5.87735 3.04199 9.37533 3.04199C12.8733 3.04199 15.7087 5.87693 15.7087 9.37363C15.7087 12.8703 12.8733 15.7053 9.37533 15.7053C5.87735 15.7053 3.04199 12.8703 3.04199 9.37363ZM9.37533 1.54199C5.04926 1.54199 1.54199 5.04817 1.54199 9.37363C1.54199 13.6991 5.04926 17.2053 9.37533 17.2053C11.2676 17.2053 13.0032 16.5344 14.3572 15.4176L17.1773 18.238C17.4702 18.5309 17.945 18.5309 18.2379 18.238C18.5308 17.9451 18.5309 17.4703 18.238 17.1773L15.4182 14.3573C16.5367 13.0033 17.2087 11.2669 17.2087 9.37363C17.2087 5.04817 13.7014 1.54199 9.37533 1.54199Z" 
+                                fill="currentColor"/>
                         </svg>
-                    </button>
+                    </span>
                     <input
                         type="text"
                         x-model="search"
                         x-on:input.debounce.500ms="currentPage = 1; applyFilters()"
                         placeholder="Search by filename, name, county, type or status..."
-                        class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pr-4 pl-11 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
+                        class="h-10 w-full rounded-lg border border-gray-300 bg-transparent py-0 pl-9 pr-8 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                     />
                     <!-- Clear search button -->
                     <button 
                         x-show="search"
                         @click="search = ''; currentPage = 1; applyFilters()"
-                        class="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                         x-cloak
                     >
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -948,11 +976,8 @@
                 <!-- Create Button -->
                 <button
                     @click="openCreateModal()"
-                    class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs ring-1 ring-gray-300 transition hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-white/[0.03] whitespace-nowrap"
+                    class="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-white px-4 text-sm font-medium text-gray-700 shadow-theme-xs border border-gray-300 dark:border-gray-700 transition hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-white/[0.03] whitespace-nowrap"
                 >
-                    <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M9.77692 3.24224C9.91768 3.17186 10.0834 3.17186 10.2241 3.24224L15.3713 5.81573L10.3359 8.33331C10.1248 8.43888 9.87626 8.43888 9.66512 8.33331L4.6298 5.81573L9.77692 3.24224ZM3.70264 7.0292V13.4124C3.70264 13.6018 3.80964 13.775 3.97903 13.8597L9.25016 16.4952L9.25016 9.7837C9.16327 9.75296 9.07782 9.71671 8.99432 9.67496L3.70264 7.0292ZM10.7502 16.4955V9.78396C10.8373 9.75316 10.923 9.71683 11.0067 9.67496L16.2984 7.0292V13.4124C16.2984 13.6018 16.1914 13.775 16.022 13.8597L10.7502 16.4955ZM9.41463 17.4831L9.10612 18.1002C9.66916 18.3817 10.3319 18.3817 10.8949 18.1002L16.6928 15.2013C17.3704 14.8625 17.7984 14.17 17.7984 13.4124V6.58831C17.7984 5.83076 17.3704 5.13823 16.6928 4.79945L10.8949 1.90059C10.3319 1.61908 9.66916 1.61907 9.10612 1.90059L9.44152 2.57141L9.10612 1.90059L3.30823 4.79945C2.63065 5.13823 2.20264 5.83076 2.20264 6.58831V13.4124C2.20264 14.17 2.63065 14.8625 3.30823 15.2013L9.10612 18.1002L9.41463 17.4831Z" fill=""/>
-                    </svg>
                     Upload New PDF
                 </button>
             </div>
@@ -1290,44 +1315,80 @@
                         </div>
                         
                         <!-- Actions (Ellipses Menu) -->
-                        <div class="col-span-1 flex items-center px-2 py-3">
-                            <div x-data="{ open: false }" class="relative">
-                                <button @click="open = !open" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                                    <svg class="fill-current w-5 h-5" viewBox="0 0 24 24">
-                                        <path fill-rule="evenodd" clip-rule="evenodd"
-                                            d="M5.999 10.245C6.966 10.245 7.749 11.029 7.749 12s-.783 1.755-1.75 1.755S4.249 12.971 4.249 12s.783-1.755 1.75-1.755zm6 0c.967 0 1.75.784 1.75 1.755s-.783 1.755-1.75 1.755S10.249 12.971 10.249 12s.783-1.755 1.75-1.755zm6 0c.967 0 1.75.784 1.75 1.755s-.783 1.755-1.75 1.755S16.249 12.971 16.249 12s.783-1.755 1.75-1.755z"/>
-                                    </svg>
-                                </button>
+                        <div class="px-5 py-3 whitespace-nowrap sm:px-6">
+                            <div class="flex items-center justify-center">
+                                <div x-data="{ open: false }" class="relative">
+                                    <button 
+                                        @click="open = !open" 
+                                        class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                                    >
+                                        <svg
+                                            class="fill-current"
+                                            width="24"
+                                            height="24"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                clip-rule="evenodd"
+                                                d="M5.99902 10.245C6.96552 10.245 7.74902 11.0285 7.74902 11.995V12.005C7.74902 12.9715 6.96552 13.755 5.99902 13.755C5.03253 13.755 4.24902 12.9715 4.24902 12.005V11.995C4.24902 11.0285 5.03253 10.245 5.99902 10.245ZM17.999 10.245C18.9655 10.245 19.749 11.0285 19.749 11.995V12.005C19.749 12.9715 18.9655 13.755 17.999 13.755C17.0325 13.755 16.249 12.9715 16.249 12.005V11.995C16.249 11.0285 17.0325 10.245 17.999 10.245ZM13.749 11.995C13.749 11.0285 12.9655 10.245 11.999 10.245C11.0325 10.245 10.249 11.0285 10.249 11.995V12.005C10.249 12.9715 11.0325 13.755 11.999 13.755C12.9655 13.755 13.749 12.9715 13.749 12.005V11.995Z"
+                                                fill="currentColor"
+                                            />
+                                        </svg>
+                                    </button>
 
-                                <!-- Dropdown menu -->
-                                <div x-show="open" @click.outside="open = false" x-transition
-                                    x-cloak
-                                    class="absolute right-0 z-50 mt-2 w-36 rounded-lg border border-gray-200 bg-white shadow-lg dark:bg-gray-800 dark:border-gray-700 space-y=1 p-1">
-                                    
-                                    <a :href="buildRoute(showRoute, item.id)"
-                                    class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                        </svg>
-                                        View
-                                    </a>
-                                    
-                                    <button @click="openEditModal(item); open = false"
-                                    class="flex items-center gap-2 w-full text-left px-3 py-2 text-sm text-yellow-600 rounded-md hover:bg-yellow-50 dark:text-yellow-400 dark:hover:bg-gray-700">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                        </svg>
-                                        Edit
-                                    </button>
-                                    
-                                    <button @click="openDeleteModal(item); open = false"
-                                            class="flex items-center gap-2 w-full text-left px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50 dark:text-red-400 dark:hover:bg-gray-700">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                        </svg>
-                                        Delete
-                                    </button>
+                                    <!-- Dropdown menu -->
+                                    <div 
+                                        x-show="open" 
+                                        @click.outside="open = false" 
+                                        x-transition
+                                        x-cloak
+                                        class="absolute right-0 z-50 mt-2 w-40 space-y-1 rounded-2xl border border-gray-200 bg-white p-2 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
+                                    >
+                                        <!-- View button -->
+                                        <a 
+                                            :href="buildRoute(showRoute, item.id)"
+                                            class="text-theme-xs flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+                                        >
+                                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path fill-rule="evenodd" clip-rule="evenodd" d="M2.5 10C2.5 10 5 5 10 5C15 5 17.5 10 17.5 10C17.5 10 15 15 10 15C5 15 2.5 10 2.5 10Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                                <path d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                            </svg>
+                                            View
+                                        </a>
+                                        
+                                        <!-- Edit button -->
+                                        <button 
+                                            @click="openEditModal(item); open = false"
+                                            class="text-theme-xs flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+                                        >
+                                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M14.4167 2.91667L17.0833 5.58333L6.25 16.4167H3.58333V13.75L14.4167 2.91667Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                                <path d="M11.6667 5L15 8.33333" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                            </svg>
+                                            Edit
+                                        </button>
+                                        
+                                        <!-- Delete button - Only visible to admin -->
+                                        @if(auth()->check() && auth()->user()->role?->name === 'admin')
+                                            <button 
+                                                @click="openDeleteModal(item); open = false"
+                                                class="text-theme-xs flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-medium text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-300"
+                                            >
+                                                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none">
+                                                    <path d="M4.16675 5.83333H15.8334V15.8333C15.8334 16.7538 15.0872 17.5 14.1667 17.5H5.83341C4.91294 17.5 4.16675 16.7538 4.16675 15.8333V5.83333Z"
+                                                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M7.5 5.83333V4.16667C7.5 3.24619 8.24619 2.5 9.16667 2.5H10.8333C11.7538 2.5 12.5 3.24619 12.5 4.16667V5.83333"
+                                                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M8.33325 9.16667V13.3333" stroke="currentColor" stroke-width="1.5"/>
+                                                    <path d="M11.6667 9.16667V13.3333" stroke="currentColor" stroke-width="1.5"/>
+                                                </svg>
+                                                Delete
+                                            </button>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -2,5 +2,6 @@
 
 return [
     App\Providers\AppServiceProvider::class,
-    App\Providers\SystemServiceProvider::class,
+    App\Providers\AuthServiceProvider::class,
+    App\SecurityKit\SecurityKitServiceProvider::class,
 ];

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
+import path from 'path';
 
 export default defineConfig({
     plugins: [
@@ -17,6 +18,11 @@ export default defineConfig({
                 'resources/js/components/charts/chart-03.js'
             ],
             refresh: true,
+            outDir: 'public/build',
+            publicDirectory: 'public_html',  
+            buildDirectory: 'build',        
         }),
     ],
+    
 });
+

@@ -18,9 +18,13 @@ use Imagick;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Helpers\SystemHelper;
 
 class PdfUploadController extends Controller
 {
+    /**
+     * Display a listing of PDF uploads.
+     */
     public function index(Request $request)
     {
         $pdfPages = PdfPage::with(['pdfUpload.uploader', 'pdfUpload.county', 'pdfUpload.marriageType'])
@@ -60,6 +64,9 @@ class PdfUploadController extends Controller
         ));
     }
 
+    /**
+     * Show the form for creating a new PDF upload.
+     */
     public function create()
     {
         if (!Auth::check()) {
@@ -87,6 +94,9 @@ class PdfUploadController extends Controller
         return view('pdf-uploads.create', compact('counties', 'months'));
     }
 
+    /**
+     * Store a newly created PDF upload in storage.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -154,6 +164,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Upload base64 encoded chunks for large files.
+     */
     public function uploadBase64Chunk(Request $request)
     {
         try {
@@ -256,6 +269,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Assemble base64 chunks into a complete PDF file.
+     */
     private function assembleBase64Chunks($request, $uploadId, $originalName)
     {
         try {
@@ -273,8 +289,7 @@ class PdfUploadController extends Controller
             // Sort chunks by index
             sort($chunkFiles);
 
-            // Generate random filename like the regular uploads (e.g., "hAK8tFaHhNUBXAEkjjp40u92MTsBhV171hPGwwde.pdf")
-            // 40 characters random string + .pdf extension
+            // Generate random filename like the regular uploads
             $randomFilename = Str::random(40) . '.pdf';
 
             // Create directory structure
@@ -381,11 +396,11 @@ class PdfUploadController extends Controller
             // Create PDF record with random filename
             $pdfUpload = PdfUpload::create([
                 'year' => $year,
-                'month' => $month, // Store as padded number (e.g., "07" not "7")
+                'month' => $month,
                 'county_code' => $request->county_code,
-                'filename' => $randomFilename, // Random filename like other records
+                'filename' => $randomFilename,
                 'file_size' => $totalSize,
-                'name' => $originalName, // Original name for display
+                'name' => $originalName,
                 'storage_path' => $finalPath,
                 'total_pages' => $pageCount,
                 'file_hash' => $fileHash,
@@ -453,6 +468,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Create PDF page records for a PDF upload.
+     */
     private function createPdfPages(PdfUpload $pdfUpload, $pageCount)
     {
         $pages = [];
@@ -469,6 +487,9 @@ class PdfUploadController extends Controller
         DB::table('pdf_pages')->insert($pages);
     }
 
+    /**
+     * Display the specified PDF page.
+     */
     public function show($id, Request $request)
     {
         $pdfPage = PdfPage::with([
@@ -552,6 +573,10 @@ class PdfUploadController extends Controller
             ->orderBy('name')
             ->get();
         
+        // Get system colors from helper
+        $primaryColor = SystemHelper::primaryColor();
+        $secondaryColor = SystemHelper::secondaryColor();
+        
         return view('pdf-uploads.show', compact(
             'pdfPage',
             'pdfUpload',
@@ -565,10 +590,15 @@ class PdfUploadController extends Controller
             'marriageStatusId',
             'verificationStatusId',
             'marriageTypes',
-            'month'
+            'month',
+            'primaryColor',
+            'secondaryColor'
         ));
     }
 
+    /**
+     * Get page data as JSON.
+     */
     public function getPageData(PdfUpload $pdfUpload, $pageNumber)
     {
         $page = $pdfUpload->pages()->where('page_number', $pageNumber)->firstOrFail();
@@ -586,6 +616,9 @@ class PdfUploadController extends Controller
         ]);
     }
 
+    /**
+     * Show a specific page of a PDF.
+     */
     public function showPage(PdfUpload $pdfUpload, $pageNumber)
     {
         $page = $pdfUpload->pages()->where('page_number', $pageNumber)->firstOrFail();
@@ -607,34 +640,111 @@ class PdfUploadController extends Controller
         return view('pdf-uploads.page', compact('pdfUpload', 'page', 'pageContent', 'marriage', 'constants'));
     }
 
+    /**
+     * Extract page for display - tries image first, falls back to PDF.
+     */
     private function extractPageForDisplay(PdfUpload $pdfUpload, $pageNumber)
     {
         try {
-            if (!extension_loaded('imagick') || !class_exists('Imagick')) {
-                Log::warning('Imagick not available for page extraction');
-                return $this->extractPageAsPdf($pdfUpload, $pageNumber);
+            // Try Imagick first for better image quality
+            if (extension_loaded('imagick') && class_exists('Imagick')) {
+                return $this->extractPageAsImage($pdfUpload, $pageNumber);
             }
             
-            $imagick = new \Imagick();
-            $imagick->setResolution(150, 150);
-            $pdfPath = Storage::disk('public')->path($pdfUpload->storage_path);
-            $imagick->readImage($pdfPath . '[' . ($pageNumber - 1) . ']');
-            $imagick->setImageFormat('png');
-            $imagick->setImageBackgroundColor('white');
-            $imagick = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+            // Fallback to PDF extraction
+            return $this->extractPageAsPdf($pdfUpload, $pageNumber);
             
-            return base64_encode($imagick->getImageBlob());
         } catch (\Exception $e) {
             Log::error('Error extracting page for display: ' . $e->getMessage());
             return $this->extractPageAsPdf($pdfUpload, $pageNumber);
         }
     }
 
+    /**
+     * Extract PDF page as an image using Imagick.
+     */
+    private function extractPageAsImage(PdfUpload $pdfUpload, $pageNumber)
+    {
+        try {
+            $pdfPath = Storage::disk('public')->path($pdfUpload->storage_path);
+            
+            if (!file_exists($pdfPath)) {
+                throw new \Exception('PDF file not found at path: ' . $pdfPath);
+            }
+            
+            // Check if Imagick is available
+            if (!extension_loaded('imagick') || !class_exists('Imagick')) {
+                throw new \Exception('Imagick extension is not available');
+            }
+            
+            $imagick = new \Imagick();
+            
+            // Set resolution for better quality
+            $imagick->setResolution(150, 150);
+            
+            // Read specific page (zero-based index)
+            $imagick->readImage($pdfPath . '[' . ($pageNumber - 1) . ']');
+            
+            // Get original dimensions
+            $originalWidth = $imagick->getImageWidth();
+            $originalHeight = $imagick->getImageHeight();
+            
+            // Set maximum dimensions while maintaining aspect ratio
+            $maxWidth = 1200;
+            $maxHeight = 1600;
+            
+            // Calculate scale if image is too large
+            if ($originalWidth > $maxWidth || $originalHeight > $maxHeight) {
+                $scale = min($maxWidth / $originalWidth, $maxHeight / $originalHeight);
+                $newWidth = round($originalWidth * $scale);
+                $newHeight = round($originalHeight * $scale);
+                $imagick->resizeImage($newWidth, $newHeight, \Imagick::FILTER_LANCZOS, 1);
+            }
+            
+            // Set image format and compression
+            $imagick->setImageFormat('jpeg');
+            $imagick->setImageCompression(\Imagick::COMPRESSION_JPEG);
+            $imagick->setImageCompressionQuality(85);
+            
+            // Set background color
+            $imagick->setImageBackgroundColor('white');
+            
+            // Flatten layers (removes transparency)
+            $imagick = $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+            
+            // Get image blob and encode as base64
+            $imageBlob = $imagick->getImageBlob();
+            
+            // Clean up
+            $imagick->clear();
+            $imagick->destroy();
+            
+            return 'data:image/jpeg;base64,' . base64_encode($imageBlob);
+            
+        } catch (\Exception $e) {
+            Log::error('Error extracting page as image: ' . $e->getMessage(), [
+                'pdf_id' => $pdfUpload->id,
+                'page' => $pageNumber,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Fall back to PDF extraction
+            return $this->extractPageAsPdf($pdfUpload, $pageNumber);
+        }
+    }
+
+    /**
+     * Extract page as PDF for embedding.
+     */
     private function extractPageAsPdf(PdfUpload $pdfUpload, $pageNumber)
     {
         try {
             $pdf = new Fpdi();
             $pdfPath = Storage::disk('public')->path($pdfUpload->storage_path);
+            
+            if (!file_exists($pdfPath)) {
+                throw new \Exception('PDF file not found');
+            }
             
             $pageCount = $pdf->setSourceFile($pdfPath);
             
@@ -643,37 +753,13 @@ class PdfUploadController extends Controller
             }
             
             $templateId = $pdf->importPage($pageNumber);
-            
             $size = $pdf->getTemplateSize($templateId);
             
-            $maxWidth = 210;
-            $maxHeight = 297;
+            // Use original dimensions without scaling
+            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
             
-            $originalWidth = $size['width'];
-            $originalHeight = $size['height'];
-            
-            $scale = min($maxWidth / $originalWidth, $maxHeight / $originalHeight);
-            
-            if ($scale > 1) {
-                $scale = 1;
-            }
-            
-            $scaledWidth = $originalWidth * $scale;
-            $scaledHeight = $originalHeight * $scale;
-            
-            $x = ($maxWidth - $scaledWidth) / 2;
-            $y = ($maxHeight - $scaledHeight) / 2;
-            
-            $pdf->AddPage();
-            
-            $pdf->useTemplate(
-                $templateId, 
-                $x,
-                $y,
-                $scaledWidth,
-                $scaledHeight,
-                true
-            );
+            // Use template at original size
+            $pdf->useTemplate($templateId, 0, 0, $size['width'], $size['height']);
             
             $pageContent = $pdf->Output('S');
             
@@ -685,8 +771,9 @@ class PdfUploadController extends Controller
         }
     }
 
-    // Removed uploadLargeFile and processUpload methods
-
+    /**
+     * Show the form for editing the specified PDF upload.
+     */
     public function edit(PdfUpload $pdfUpload)
     {
         $counties = County::select('county_code', 'name')
@@ -699,6 +786,9 @@ class PdfUploadController extends Controller
         return view('pdf-uploads.edit', compact('pdfUpload', 'counties', 'months'));
     }
 
+    /**
+     * Update the specified PDF upload in storage.
+     */
     public function update(Request $request, PdfUpload $pdfUpload)
     {
         $request->validate([
@@ -800,6 +890,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Remove the specified PDF upload from storage.
+     */
     public function destroy(PdfUpload $pdfUpload)
     {
         try {
@@ -833,6 +926,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Download the PDF file.
+     */
     public function download(PdfUpload $pdfUpload)
     {
         if (!Storage::disk('public')->exists($pdfUpload->storage_path)) {
@@ -842,6 +938,9 @@ class PdfUploadController extends Controller
         return Storage::disk('public')->download($pdfUpload->storage_path, $pdfUpload->name);
     }
 
+    /**
+     * Preview the PDF file in browser.
+     */
     public function preview(PdfUpload $pdfUpload)
     {
         if (!Storage::disk('public')->exists($pdfUpload->storage_path)) {
@@ -857,6 +956,9 @@ class PdfUploadController extends Controller
         ]);
     }
 
+    /**
+     * Get thumbnail for PDF.
+     */
     public function thumbnail(PdfUpload $pdfUpload)
     {
         if ($pdfUpload->thumbnail_path && Storage::disk('public')->exists($pdfUpload->thumbnail_path)) {
@@ -866,6 +968,9 @@ class PdfUploadController extends Controller
         return response()->file(public_path('images/default-pdf-thumb.png'));
     }
     
+    /**
+     * Get overview card data for dashboard.
+     */
     private function getOverviewCardData()
     {
         $totalRecords = PdfPage::count();
@@ -901,6 +1006,9 @@ class PdfUploadController extends Controller
         ];
     }
 
+    /**
+     * Get storage usage as formatted string.
+     */
     private function getStorageRecorded()
     {
         $totalStorageBytes = PdfUpload::sum('file_size');
@@ -910,6 +1018,9 @@ class PdfUploadController extends Controller
         return $storageUsedMB . ' MB / ' . $storageLimitGB . ' GB';
     }
     
+    /**
+     * Calculate average completion rate.
+     */
     private function calculateAverageCompletionRate()
     {
         $pdfs = PdfUpload::all();
@@ -926,6 +1037,9 @@ class PdfUploadController extends Controller
         return round($totalCompletion / $pdfs->count(), 1);
     }
     
+    /**
+     * Calculate completion rate for a single PDF.
+     */
     private function calculatePdfCompletionRate(PdfUpload $pdfUpload)
     {
         $fields = [
@@ -943,6 +1057,9 @@ class PdfUploadController extends Controller
         return $completedFields > 0 ? round(($completedFields / count($fields)) * 100) : 0;
     }
     
+    /**
+     * Get page count from uploaded file.
+     */
     private function getPdfPageCount($file)
     {
         try {
@@ -956,6 +1073,9 @@ class PdfUploadController extends Controller
         }
     }
     
+    /**
+     * Get page count from file path.
+     */
     private function getPdfPageCountFromPath($filePath)
     {
         try {
@@ -973,6 +1093,9 @@ class PdfUploadController extends Controller
         }
     }
     
+    /**
+     * Generate thumbnail for PDF.
+     */
     private function generatePdfThumbnail($pdfUpload)
     {
         try {
@@ -1010,6 +1133,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Create placeholder thumbnail when Imagick fails.
+     */
     private function createPlaceholderThumbnail($pdfUpload)
     {
         try {
@@ -1032,6 +1158,9 @@ class PdfUploadController extends Controller
         }
     }
     
+    /**
+     * Format bytes to human readable format.
+     */
     private function formatBytes($bytes, $precision = 2)
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -1043,6 +1172,9 @@ class PdfUploadController extends Controller
         return round($bytes, $precision) . ' ' . $units[$pow];
     }
     
+    /**
+     * Get list of months.
+     */
     private function getMonthsList()
     {
         return [
@@ -1053,6 +1185,9 @@ class PdfUploadController extends Controller
         ];
     }
     
+    /**
+     * Get statistics for dashboard.
+     */
     public function getStatistics()
     {
         $cardData = $this->getOverviewCardData();
@@ -1082,6 +1217,9 @@ class PdfUploadController extends Controller
         ]);
     }
 
+    /**
+     * Bulk update PDF uploads.
+     */
     public function bulkUpdate(Request $request)
     {
         $request->validate([
@@ -1100,7 +1238,9 @@ class PdfUploadController extends Controller
         ]);
     }
     
-
+    /**
+     * Get user uploads.
+     */
     public function getUserUploads($userId)
     {
         $user = User::findOrFail($userId);
@@ -1120,6 +1260,9 @@ class PdfUploadController extends Controller
         return view('pdf-uploads.user-uploads', compact('user', 'uploads', 'userStats'));
     }
     
+    /**
+     * Calculate average completion for a user.
+     */
     private function calculateUserAverageCompletion($userId)
     {
         $pdfs = PdfUpload::where('uploaded_by', $userId)->get();
@@ -1136,6 +1279,9 @@ class PdfUploadController extends Controller
         return round($totalCompletion / $pdfs->count(), 1);
     }
 
+    /**
+     * Save quick data for a page.
+     */
     public function saveQuickData(Request $request, PdfPage $page)
     {
         $validated = $request->validate([
@@ -1154,6 +1300,9 @@ class PdfUploadController extends Controller
         ]);
     }
 
+    /**
+     * Show linked marriages for a PDF.
+     */
     public function showLinkedMarriages(PdfUpload $pdfUpload)
     {
         $marriagesViaPdfId = $pdfUpload->marriages()->with(['spouses', 'witnesses', 'createdBy'])->get();
@@ -1176,6 +1325,9 @@ class PdfUploadController extends Controller
         return view('pdf-uploads.linked-marriages', compact('pdfUpload', 'allMarriages', 'stats'));
     }
 
+    /**
+     * Show relationships for a PDF.
+     */
     public function showRelationships(PdfUpload $pdfUpload)
     {
         $pdfUpload->load([
@@ -1216,6 +1368,9 @@ class PdfUploadController extends Controller
         ));
     }
 
+    /**
+     * Show all relationships with filters.
+     */
     public function showAllRelationships(Request $request)
     {
         $query = PdfUpload::withCount([
@@ -1244,10 +1399,10 @@ class PdfUploadController extends Controller
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
-                ->orWhere('county_code', 'like', "%{$request->search}%")
-                ->orWhereHas('county', function($q) use ($request) {
-                    $q->where('name', 'like', "%{$request->search}%");
-                });
+                  ->orWhere('county_code', 'like', "%{$request->search}%")
+                  ->orWhereHas('county', function($q) use ($request) {
+                      $q->where('name', 'like', "%{$request->search}%");
+                  });
             });
         }
         
@@ -1302,7 +1457,10 @@ class PdfUploadController extends Controller
             'overallStats'
         ));
     }
-        
+    
+    /**
+     * Quick create marriage from page.
+     */
     public function quickCreateFromPage(Request $request)
     {
         Log::info('🎯 QUICK CREATE METHOD CALLED!', [
@@ -1410,6 +1568,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Quick update marriage.
+     */
     public function quickUpdate(Request $request, Marriage $marriage)
     {
         $user = Auth::user();
@@ -1484,6 +1645,9 @@ class PdfUploadController extends Controller
         }
     }
 
+    /**
+     * Assign page to current user.
+     */
     public function assignPage(PdfPage $page)
     {
         if ($page->status !== 'pending') {
@@ -1503,6 +1667,9 @@ class PdfUploadController extends Controller
         ]);
     }
 
+    /**
+     * Mark page as completed.
+     */
     public function completePage(Request $request, PdfPage $page)
     {
         if ($page->assigned_to !== auth()->id()) {

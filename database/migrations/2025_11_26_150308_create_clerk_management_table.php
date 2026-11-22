@@ -18,11 +18,9 @@ return new class extends Migration
             $table->integer('target_count')->default(0);
             $table->enum('status', ['active', 'completed', 'locked'])->default('active');
             $table->text('notes')->nullable();
-            $table->foreignId('pdf_upload_id')->nullable()->constrained('pdf_uploads');
-            $table->enum('assignment_type', ['manual', 'pdf_bulk'])->default('manual');
-            $table->json('assigned_pages')->nullable(); // [1, 5, 10, 15] or range "1
             $table->timestamps();
-
+            
+            // Ensure unique assignment per clerk per period
             $table->unique(['data_clerk_id', 'year', 'month']);
         });
     }

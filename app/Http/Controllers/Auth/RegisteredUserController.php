@@ -12,15 +12,21 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 use App\Models\Role; 
+ 
+
 
 class RegisteredUserController extends Controller
 {
+    /**
+     * Display the registration view.
+     */
     public function create(): View
     {
         return view('auth.register', [
             'roles' => Role::orderBy('name')->get(),
         ]);
     }
+    
 
     /**
      * Handle an incoming registration request.
@@ -49,6 +55,4 @@ class RegisteredUserController extends Controller
 
         return redirect(route('dashboard', absolute: false));
     }
-
-    
 }

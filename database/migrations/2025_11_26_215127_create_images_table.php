@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up(): void
+    public function up()
     {
         Schema::create('images', function (Blueprint $table) {
             $table->id();
@@ -16,15 +16,13 @@ return new class extends Migration
             $table->string('certificate_serial')->nullable();
             $table->integer('year');
             $table->integer('month');
-            $table->foreignId('uploaded_by')->constrained('users')->onDelete('cascade');
-            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('cascade');
-            $table->integer('file_size')->nullable();
-            $table->string('fit_type', 50)->nullable();
+            $table->foreignId('uploaded_by')->constrained('users');
+             $table->foreignId('updated_by')->nullable()->after('uploaded_by')->constrained('users');
             $table->timestamps();
         });
     }
 
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('images');
     }
