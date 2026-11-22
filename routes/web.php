@@ -11,6 +11,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\PdfUploadController;
 use App\Http\Controllers\ClerkManagementController;
+use App\Http\Controllers\EarningsController;
 use App\Http\Controllers\Admin\SystemController;
 use App\Http\Controllers\Auth\GoogleController;
 
@@ -97,6 +98,10 @@ Route::middleware('auth')->group(function () {
     // -------- USER MANAGEMENT --------
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users/{user}/assign-role', [UserController::class, 'assignRole'])->name('users.assign-role');
+
+    // -------- EARNINGS --------
+    Route::get('/earnings', [EarningsController::class, 'index'])->name('earnings.index');
+    Route::get('/earnings/{user}', [EarningsController::class, 'show'])->name('earnings.show');
 
     // -------- CLERK MANAGEMENT --------
     Route::prefix('clerk-management')->name('clerk-management.')->group(function () {
